@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,21 +53,32 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+				// Brutalist wallet theme
+				electric: {
+					blue: '#00BFFF',
+					lime: '#32FF32',
+					orange: '#FF6B00',
+					purple: '#8A2BE2'
+				},
+				brutal: {
+					black: '#000000',
+					white: '#FFFFFF',
+					gray: '#808080'
 				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			fontFamily: {
+				'mono': ['JetBrains Mono', 'monospace'],
+				'brutal': ['Inter', 'sans-serif']
+			},
+			boxShadow: {
+				'brutal': '8px 8px 0px 0px #000000',
+				'brutal-lg': '12px 12px 0px 0px #000000',
+				'electric': '4px 4px 0px 0px #00BFFF'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +96,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-electric': {
+					'0%, 100%': { boxShadow: '0 0 20px #00BFFF' },
+					'50%': { boxShadow: '0 0 40px #00BFFF, 0 0 60px #00BFFF' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-electric': 'pulse-electric 2s ease-in-out infinite'
 			}
 		}
 	},
