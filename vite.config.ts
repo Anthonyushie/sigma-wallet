@@ -27,5 +27,14 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     exclude: ['tiny-secp256k1']
+  },
+  build: {
+    target: 'esnext',
+    minify: false,
+    rollupOptions: {
+      output: {
+        format: 'es'
+      }
+    }
   }
 }));
