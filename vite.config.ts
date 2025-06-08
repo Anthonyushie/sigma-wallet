@@ -20,13 +20,16 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      buffer: "buffer",
     },
   },
   define: {
     global: 'globalThis',
+    Buffer: ['buffer', 'Buffer'],
   },
   optimizeDeps: {
-    exclude: ['tiny-secp256k1']
+    exclude: ['tiny-secp256k1'],
+    include: ['buffer']
   },
   build: {
     target: 'esnext',
