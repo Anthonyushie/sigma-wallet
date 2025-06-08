@@ -1,6 +1,6 @@
 
 import React from 'react';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface QRCodeDisplayProps {
   value: string;
@@ -18,7 +18,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   return (
     <div className={`flex justify-center ${className}`}>
       <div className="brutal-card p-4 bg-white">
-        <QRCode
+        <QRCodeSVG
           value={value}
           size={size}
           level={level}

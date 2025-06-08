@@ -2,6 +2,7 @@
 import * as bip39 from 'bip39';
 import * as bitcoin from 'bitcoinjs-lib';
 import BIP32Factory from 'bip32';
+import * as ecc from 'tiny-secp256k1';
 import { get, set, del } from 'idb-keyval';
 
 export interface WalletKeys {
@@ -25,8 +26,8 @@ export class BitcoinWalletService {
     }
 
     const seed = await bip39.mnemonicToSeed(mnemonic);
-    const bip32 = BIP32Factory();
-    const root = bip32.fromSeed(seed);
+    const bip32 = BIP32Factory(ecc);
+    const root = bip32.fromSeed(Buffer.from(seed));
     
     // Derive the first account's first receiving address (m/44'/0'/0'/0/0)
     const path = "m/44'/0'/0'/0/0";
