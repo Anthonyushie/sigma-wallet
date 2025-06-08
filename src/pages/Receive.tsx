@@ -5,15 +5,20 @@ import { Copy } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import Layout from '../components/Layout';
 import ActionButton from '../components/ActionButton';
+import QRCodeDisplay from '../components/QRCodeDisplay';
 
 const Receive: React.FC = () => {
   const navigate = useNavigate();
-  const { receiveFlow, generateInvoice, resetReceiveFlow } = useWallet();
+  const { receiveFlow, generateInvoice, resetReceiveFlow, isLightningLoading, lightningError } = useWallet();
   const [amount, setAmount] = useState('');
 
-  const handleGenerateInvoice = () => {
+  const handleGenerateInvoice = async () => {
     if (amount) {
-      generateInvoice(parseFloat(amount));
+      try {
+        await generateInvoice(parseFloat(amount));
+      } catch (error) {
+        console.error('Failed to generate invoice:', error);
+      }
     }
   };
 
@@ -48,8 +53,15 @@ const Receive: React.FC = () => {
               onChange={(e) => setAmount(e.target.value)}
               placeholder="21000"
               className="brutal-input w-full text-2xl"
+              disabled={isLightningLoading}
             />
           </div>
+          
+          {lightningError && (
+            <div className="brutal-card bg-red-500 text-white">
+              <p className="font-mono text-sm">{lightningError}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -59,6 +71,7 @@ const Receive: React.FC = () => {
           variant="secondary"
           size="lg"
           className="w-full"
+          disabled={isLightningLoading}
         >
           CANCEL
         </ActionButton>
@@ -68,9 +81,9 @@ const Receive: React.FC = () => {
           variant="success"
           size="lg"
           className="w-full"
-          disabled={!amount}
+          disabled={!amount || isLightningLoading}
         >
-          GENERATE
+          {isLightningLoading ? 'GENERATING...' : 'GENERATE'}
         </ActionButton>
       </div>
     </div>
@@ -85,17 +98,16 @@ const Receive: React.FC = () => {
         </p>
       </div>
 
-      {/* QR Code Placeholder */}
-      <div className="brutal-card">
-        <div className="aspect-square bg-black flex items-center justify-center mb-4">
-          <div className="bg-white p-8 text-center">
-            <p className="font-mono text-sm">QR CODE</p>
-            <p className="font-mono text-xs text-gray-500">
-              {receiveFlow.invoice?.substring(0, 20)}...
-            </p>
-          </div>
-        </div>
+      {/* QR Code */}
+      {receiveFlow.invoice && (
+        <QRCodeDisplay 
+          value={receiveFlow.invoice} 
+          size={250}
+          className="mb-4"
+        />
+      )}
         
+      <div className="brutal-card">
         <ActionButton
           onClick={handleCopyInvoice}
           variant="primary"
