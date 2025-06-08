@@ -34,7 +34,7 @@ const Onboarding: React.FC = () => {
     <div className="space-y-6">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-black uppercase">
-          BRUTAL WALLET
+          SIGMA WALLET
         </h1>
         <p className="text-lg font-mono">
           Self-custodial Bitcoin & Lightning

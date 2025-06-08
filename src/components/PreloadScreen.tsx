@@ -1,4 +1,4 @@
-
+import Sigma from "../assets/sigma.jpeg"
 import React, { useEffect, useState } from 'react';
 
 interface PreloadScreenProps {
@@ -76,7 +76,7 @@ const PreloadScreen: React.FC<PreloadScreenProps> = ({ onComplete }) => {
             ${glitchActive ? 'scale-110 rotate-2 hue-rotate-180' : 'scale-100 rotate-0'}
           `}>
             <img
-              src="/lovable-uploads/9fcff222-0e27-4ecb-b810-381ec08d4641.png"
+              src={Sigma}
               alt="Loading"
               className={`
                 w-48 h-48 object-cover border-8 border-black shadow-brutal-lg
@@ -138,7 +138,7 @@ const PreloadScreen: React.FC<PreloadScreenProps> = ({ onComplete }) => {
         <div className="mt-8 overflow-hidden">
           <div className="animate-bounce">
             <p className="text-2xl font-black uppercase text-black tracking-widest">
-              BRUTAL BITCOIN FORGE
+              SIGMA-WALLET
             </p>
           </div>
         </div>

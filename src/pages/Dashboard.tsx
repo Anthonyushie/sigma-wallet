@@ -12,7 +12,7 @@ const Dashboard: React.FC = () => {
   const { wallet } = useWallet();
 
   return (
-    <Layout title="BRUTAL WALLET">
+    <Layout title="SIGMA WALLET">
       <div className="max-w-md mx-auto space-y-6">
         
         {/* Balance Cards */}
