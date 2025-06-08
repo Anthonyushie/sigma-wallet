@@ -36,7 +36,7 @@ export interface BreezTransaction {
 
 export class BreezAPIService {
   private static readonly BASE_URL = 'https://api.breez.technology';
-  private static readonly API_KEY = 'your_api_key_here';
+  private static readonly API_KEY = 'MIIBfjCCATCgAwIBAgIHPh1T9W3eozAFBgMrZXAwEDEOMAwGA1UEAxMFQnJlZXowHhcNMjUwNTI3MTgxMTM5WhcNMzUwNTI1MTgxMTM5WjArMRAwDgYDVQQKEwdpUGF5QlRDMRcwFQYDVQQDEw5BbnRob255ICBVc2hpZTAqMAUGAytlcAMhANCD9cvfIDwcoiDKKYdT9BunHLS2/OuKzV8NS0SzqV13o4GNMIGKMA4GA1UdDwEB/wQEAwIFoDAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBTaOaPuXmtLDTJVv++VYBiQr9gHCTAfBgNVHSMEGDAWgBTeqtaSVvON53SSFvxMtiCyayiYazAqBgNVHREEIzAhgR9hbnRob255dHdhbjc1b2ZmaWNpYWxAZ21haWwuY29tMAUGAytlcANBAMeVKtqppAVc0tVWDWnCFhstHvqoSES+cJnbwVGVExmcPckSxEaTFJ4U2zvUeyQyGPy/Ifotm178YMuDWVQ63Q8=';
 
   private static async makeRequest<T>(
     endpoint: string,
@@ -67,21 +67,6 @@ export class BreezAPIService {
   ): Promise<BreezInvoice> {
     console.log('Creating invoice:', { amount, description });
     
-    // Mock response for development - replace with actual API call
-    const mockInvoice: BreezInvoice = {
-      id: `inv_${Date.now()}`,
-      bolt11: `lnbc${amount}u1p${Math.random().toString(36).substring(2, 15)}`,
-      amount,
-      description,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 3600000).toISOString(), // 1 hour
-    };
-
-    return mockInvoice;
-
-    // Uncomment when using real API:
-    /*
     return this.makeRequest<BreezInvoice>('/v1/invoices', {
       method: 'POST',
       body: JSON.stringify({
@@ -89,103 +74,34 @@ export class BreezAPIService {
         description,
       }),
     });
-    */
   }
 
   static async payInvoice(bolt11: string): Promise<BreezPayment> {
     console.log('Paying invoice:', bolt11);
     
-    // Mock response for development - replace with actual API call
-    const mockPayment: BreezPayment = {
-      id: `pay_${Date.now()}`,
-      bolt11,
-      amount: 1000, // Mock amount
-      description: 'Payment',
-      status: 'complete',
-      createdAt: new Date().toISOString(),
-    };
-
-    return mockPayment;
-
-    // Uncomment when using real API:
-    /*
     return this.makeRequest<BreezPayment>('/v1/payments', {
       method: 'POST',
       body: JSON.stringify({
         bolt11,
       }),
     });
-    */
   }
 
   static async getBalance(): Promise<BreezBalance> {
     console.log('Getting balance');
     
-    // Mock response for development - replace with actual API call
-    const mockBalance: BreezBalance = {
-      balance: 45000,
-      pendingReceive: 0,
-      pendingSend: 0,
-    };
-
-    return mockBalance;
-
-    // Uncomment when using real API:
-    /*
     return this.makeRequest<BreezBalance>('/v1/balance');
-    */
   }
 
   static async getTransactions(): Promise<BreezTransaction[]> {
     console.log('Getting transactions');
     
-    // Mock response for development - replace with actual API call
-    const mockTransactions: BreezTransaction[] = [
-      {
-        id: '1',
-        type: 'receive',
-        amount: 21000,
-        description: 'Lightning payment',
-        status: 'complete',
-        timestamp: new Date('2024-06-07T10:30:00').toISOString(),
-      },
-      {
-        id: '2',
-        type: 'send',
-        amount: 5000,
-        description: 'Coffee payment',
-        status: 'complete',
-        timestamp: new Date('2024-06-06T15:45:00').toISOString(),
-      },
-    ];
-
-    return mockTransactions;
-
-    // Uncomment when using real API:
-    /*
     return this.makeRequest<BreezTransaction[]>('/v1/transactions');
-    */
   }
 
   static async getInvoiceStatus(invoiceId: string): Promise<BreezInvoice> {
     console.log('Getting invoice status:', invoiceId);
     
-    // Mock response for development - replace with actual API call
-    const mockInvoice: BreezInvoice = {
-      id: invoiceId,
-      bolt11: `lnbc1000u1p${Math.random().toString(36).substring(2, 15)}`,
-      amount: 1000,
-      description: 'Test invoice',
-      status: 'paid',
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 3600000).toISOString(),
-    };
-
-    return mockInvoice;
-
-    // Uncomment when using real API:
-    /*
     return this.makeRequest<BreezInvoice>(`/v1/invoices/${invoiceId}`);
-    */
   }
 }
