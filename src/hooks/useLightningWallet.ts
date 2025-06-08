@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
-import { BreezAPIService, BreezBalance, BreezTransaction, BreezInvoice, BreezPayment } from '../services/breezAPI';
+import { BreezSDKService, BreezBalance, BreezTransaction, BreezInvoice, BreezPayment } from '../services/breezSDK';
 
 export interface LightningWalletState {
   isInitialized: boolean;
@@ -40,6 +40,10 @@ export const useLightningWallet = () => {
         const mnemonic = await BitcoinWalletService.getStoredMnemonic();
         if (mnemonic) {
           const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
+          
+          // Connect to Breez SDK
+          await BreezSDKService.connect(mnemonic);
+          
           setState(prev => ({
             ...prev,
             isInitialized: true,
@@ -61,6 +65,10 @@ export const useLightningWallet = () => {
       setError(null);
 
       const walletKeys = await BitcoinWalletService.generateWallet();
+      
+      // Connect to Breez SDK with new mnemonic
+      await BreezSDKService.connect(walletKeys.mnemonic);
+      
       setState(prev => ({
         ...prev,
         isInitialized: true,
@@ -83,6 +91,10 @@ export const useLightningWallet = () => {
       setError(null);
 
       const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
+      
+      // Connect to Breez SDK
+      await BreezSDKService.connect(mnemonic);
+      
       setState(prev => ({
         ...prev,
         isInitialized: true,
@@ -101,8 +113,8 @@ export const useLightningWallet = () => {
   const refreshWalletData = async () => {
     try {
       const [balance, transactions] = await Promise.all([
-        BreezAPIService.getBalance(),
-        BreezAPIService.getTransactions(),
+        BreezSDKService.getBalance(),
+        BreezSDKService.getTransactions(),
       ]);
 
       setState(prev => ({
@@ -120,7 +132,7 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      const invoice = await BreezAPIService.createInvoice(amount, description);
+      const invoice = await BreezSDKService.createInvoice(amount, description);
       await refreshWalletData();
       return invoice;
     } catch (error) {
@@ -136,7 +148,7 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      const payment = await BreezAPIService.payInvoice(bolt11);
+      const payment = await BreezSDKService.payInvoice(bolt11);
       await refreshWalletData();
       return payment;
     } catch (error) {
@@ -149,6 +161,7 @@ export const useLightningWallet = () => {
 
   const deleteWallet = async () => {
     try {
+      await BreezSDKService.disconnect();
       await BitcoinWalletService.deleteWallet();
       setState({
         isInitialized: false,
