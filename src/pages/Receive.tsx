@@ -90,54 +90,183 @@ const Receive: React.FC = () => {
   );
 
   const renderInvoiceScreen = () => (
-    <div className="space-y-6">
-      <div className="brutal-card">
-        <h2 className="text-2xl font-black mb-4">LIGHTNING INVOICE</h2>
-        <p className="font-mono text-lg">
-          Amount: {receiveFlow.amount} SATS
-        </p>
-      </div>
-
-      {/* QR Code */}
-      {receiveFlow.invoice && (
-        <QRCodeDisplay 
-          value={receiveFlow.invoice} 
-          size={250}
-          className="mb-4"
-        />
-      )}
-        
-      <div className="brutal-card">
-        <ActionButton
-          onClick={handleCopyInvoice}
-          variant="primary"
-          size="md"
-          className="w-full flex items-center justify-center space-x-2"
-        >
-          <Copy size={16} />
-          <span>COPY INVOICE</span>
-        </ActionButton>
-      </div>
-
-      {/* Invoice Details */}
-      <div className="brutal-card">
-        <h3 className="font-black uppercase text-sm mb-2">INVOICE</h3>
-        <div className="bg-gray-100 p-3 border-2 border-black font-mono text-xs break-all">
-          {receiveFlow.invoice}
+    <div className="space-y-6 relative overflow-hidden">
+      {/* BOSS ANIMATION Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-r from-electric-purple via-electric-orange to-electric-blue opacity-25 animate-pulse"></div>
+        <div className="boss-animation">
+          <img 
+            src="/lovable-uploads/1df32685-ac5a-4520-94cc-6af5606388ef.png" 
+            alt="BOSS MODE" 
+            className="boss-image"
+          />
+        </div>
+        {/* Additional floating elements */}
+        <div className="money-rain">
+          <span className="money-emoji">💰</span>
+          <span className="money-emoji">💵</span>
+          <span className="money-emoji">💸</span>
+          <span className="money-emoji">🤑</span>
         </div>
       </div>
 
-      <ActionButton
-        onClick={() => {
-          resetReceiveFlow();
-          navigate('/dashboard');
-        }}
-        variant="secondary"
-        size="lg"
-        className="w-full"
-      >
-        BACK TO DASHBOARD
-      </ActionButton>
+      {/* Content */}
+      <div className="relative z-10">
+        <div className="brutal-card bg-electric-orange text-black border-4 border-black shadow-brutal-lg">
+          <h2 className="text-3xl font-black mb-4 animate-bounce">⚡ BOSS LEVEL INVOICE! ⚡</h2>
+          <p className="font-mono text-xl font-black">
+            PREPARE FOR LEGENDARY PAYMENT
+          </p>
+          <p className="font-mono text-lg mt-2">
+            Amount: {receiveFlow.amount} SATS 👑
+          </p>
+        </div>
+
+        {/* QR Code with epic styling */}
+        {receiveFlow.invoice && (
+          <div className="brutal-card bg-electric-lime text-black border-4 border-black shadow-brutal relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-electric-blue to-electric-purple opacity-10 animate-pulse rounded"></div>
+            <div className="relative z-10 flex justify-center">
+              <QRCodeDisplay 
+                value={receiveFlow.invoice} 
+                size={250}
+                className="mb-4 animate-pulse border-4 border-black"
+              />
+            </div>
+          </div>
+        )}
+          
+        <div className="brutal-card bg-electric-blue text-black border-4 border-black shadow-brutal">
+          <ActionButton
+            onClick={handleCopyInvoice}
+            variant="primary"
+            size="md"
+            className="w-full flex items-center justify-center space-x-2 font-black text-lg animate-pulse"
+          >
+            <Copy size={20} />
+            <span>💪 COPY BOSS INVOICE 💪</span>
+          </ActionButton>
+        </div>
+
+        {/* Invoice Details */}
+        <div className="brutal-card bg-electric-purple text-white border-4 border-black shadow-brutal">
+          <h3 className="font-black uppercase text-sm mb-2">🎯 BOSS INVOICE DETAILS 🎯</h3>
+          <div className="bg-black p-3 border-2 border-electric-lime font-mono text-xs break-all text-electric-lime">
+            {receiveFlow.invoice}
+          </div>
+        </div>
+
+        <ActionButton
+          onClick={() => {
+            resetReceiveFlow();
+            navigate('/dashboard');
+          }}
+          variant="secondary"
+          size="lg"
+          className="w-full font-black text-xl"
+        >
+          BACK TO COMMAND CENTER
+        </ActionButton>
+      </div>
+
+      <style>{`
+        .boss-animation {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1;
+          pointer-events: none;
+        }
+        
+        .boss-image {
+          width: 280px;
+          height: auto;
+          opacity: 0.12;
+          animation: boss-float 4s ease-in-out infinite, boss-glow 3s ease-in-out infinite alternate;
+          filter: brightness(1.8) contrast(1.3) sepia(0.3) hue-rotate(30deg);
+        }
+        
+        .money-rain {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 2;
+        }
+        
+        .money-emoji {
+          position: absolute;
+          font-size: 2rem;
+          animation: money-fall 5s linear infinite;
+          opacity: 0.4;
+        }
+        
+        .money-emoji:nth-child(1) {
+          left: 10%;
+          animation-delay: 0s;
+        }
+        
+        .money-emoji:nth-child(2) {
+          left: 30%;
+          animation-delay: 1.5s;
+        }
+        
+        .money-emoji:nth-child(3) {
+          left: 60%;
+          animation-delay: 3s;
+        }
+        
+        .money-emoji:nth-child(4) {
+          left: 85%;
+          animation-delay: 4s;
+        }
+        
+        @keyframes boss-float {
+          0%, 100% { 
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+          }
+          25% { 
+            transform: translate(-50%, -55%) rotate(2deg) scale(1.1);
+          }
+          50% { 
+            transform: translate(-50%, -45%) rotate(-1deg) scale(1.05);
+          }
+          75% { 
+            transform: translate(-50%, -50%) rotate(1deg) scale(1.08);
+          }
+        }
+        
+        @keyframes boss-glow {
+          0% { 
+            opacity: 0.08; 
+            filter: brightness(1.5) contrast(1) hue-rotate(0deg);
+          }
+          100% { 
+            opacity: 0.18; 
+            filter: brightness(2.5) contrast(1.8) hue-rotate(45deg);
+          }
+        }
+        
+        @keyframes money-fall {
+          0% { 
+            transform: translateY(-100px) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.6;
+          }
+          90% {
+            opacity: 0.6;
+          }
+          100% { 
+            transform: translateY(100vh) rotate(360deg);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 

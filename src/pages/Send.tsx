@@ -190,7 +190,7 @@ const Send: React.FC = () => {
         </ActionButton>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .gigachad-animation {
           position: fixed;
           top: 50%;
