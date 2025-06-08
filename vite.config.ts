@@ -25,7 +25,6 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     global: 'globalThis',
-    Buffer: ['buffer', 'Buffer'],
   },
   optimizeDeps: {
     exclude: ['tiny-secp256k1'],
