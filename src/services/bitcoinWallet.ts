@@ -38,7 +38,7 @@ export class BitcoinWalletService {
     }
 
     const { address } = bitcoin.payments.p2wpkh({ 
-      pubkey: child.publicKey,
+      pubkey: Buffer.from(child.publicKey),
       network: bitcoin.networks.bitcoin 
     });
 
@@ -48,8 +48,8 @@ export class BitcoinWalletService {
 
     const walletKeys: WalletKeys = {
       mnemonic,
-      privateKey: child.privateKey.toString('hex'),
-      publicKey: child.publicKey.toString('hex'),
+      privateKey: Buffer.from(child.privateKey).toString('hex'),
+      publicKey: Buffer.from(child.publicKey).toString('hex'),
       address
     };
 
