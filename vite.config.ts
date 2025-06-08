@@ -1,5 +1,7 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import wasm from "vite-plugin-wasm";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
@@ -11,6 +13,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    wasm(),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
@@ -19,4 +22,10 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    exclude: ['tiny-secp256k1']
+  }
 }));
