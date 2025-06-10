@@ -41,7 +41,7 @@
     --background: 0 0 0;
     --foreground: 255 255 255;
 
-    --card: 20 20 20;
+    --card: 0 0 0;
     --card-foreground: 255 255 255;
 
     --popover: 0 0 0;
@@ -63,7 +63,7 @@
     --destructive-foreground: 255 255 255;
 
     --border: 255 255 255;
-    --input: 20 20 20;
+    --input: 0 0 0;
     --ring: 0 191 255;
   }
 }
@@ -89,7 +89,7 @@
   }
 
   .dark .brutal-button {
-    @apply bg-gray-900 text-white border-white;
+    @apply bg-black text-white border-white;
   }
 
   .brutal-input {
@@ -97,7 +97,7 @@
   }
 
   .dark .brutal-input {
-    @apply bg-gray-900 text-white border-white;
+    @apply bg-black text-white border-white;
   }
 
   .brutal-card {
@@ -105,12 +105,43 @@
   }
 
   .dark .brutal-card {
-    @apply bg-gray-900 border-white;
+    @apply bg-black border-white;
   }
 
   .electric-glow {
     @apply shadow-[0_0_20px_#00BFFF];
   }
+}
+
+/* Dark mode overrides for all white backgrounds */
+.dark {
+  /* Override any remaining white backgrounds */
+  background-color: black !important;
+}
+
+.dark * {
+  /* Ensure all elements inherit dark theme properly */
+  border-color: white;
+}
+
+.dark .bg-white {
+  @apply bg-black text-white;
+}
+
+.dark .text-black {
+  @apply text-white;
+}
+
+.dark .border-black {
+  @apply border-white;
+}
+
+/* Specific overrides for balance cards and other components */
+.dark .bg-electric-blue,
+.dark .bg-electric-lime,
+.dark .bg-electric-orange {
+  /* Keep electric colors but ensure text is readable */
+  color: black !important;
 }
 
 @keyframes slide-down {
