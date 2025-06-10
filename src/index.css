@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
 @tailwind base;
@@ -42,7 +41,7 @@
     --background: 0 0 0;
     --foreground: 255 255 255;
 
-    --card: 0 0 0;
+    --card: 20 20 20;
     --card-foreground: 255 255 255;
 
     --popover: 0 0 0;
@@ -54,8 +53,8 @@
     --secondary: 50 255 50;
     --secondary-foreground: 0 0 0;
 
-    --muted: 128 128 128;
-    --muted-foreground: 0 0 0;
+    --muted: 64 64 64;
+    --muted-foreground: 200 200 200;
 
     --accent: 255 107 0;
     --accent-foreground: 255 255 255;
@@ -64,7 +63,7 @@
     --destructive-foreground: 255 255 255;
 
     --border: 255 255 255;
-    --input: 0 0 0;
+    --input: 20 20 20;
     --ring: 0 191 255;
   }
 }
@@ -76,6 +75,7 @@
 
   body {
     @apply bg-background text-foreground font-brutal;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -88,12 +88,24 @@
     @apply bg-white text-black border-4 border-black font-black uppercase tracking-wide px-6 py-4 shadow-brutal hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-150;
   }
 
+  .dark .brutal-button {
+    @apply bg-gray-900 text-white border-white;
+  }
+
   .brutal-input {
     @apply bg-white text-black border-4 border-black px-4 py-3 font-mono text-lg shadow-brutal focus:outline-none focus:shadow-electric;
   }
 
+  .dark .brutal-input {
+    @apply bg-gray-900 text-white border-white;
+  }
+
   .brutal-card {
     @apply bg-white border-4 border-black shadow-brutal-lg p-6;
+  }
+
+  .dark .brutal-card {
+    @apply bg-gray-900 border-white;
   }
 
   .electric-glow {
