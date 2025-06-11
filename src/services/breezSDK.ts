@@ -1,6 +1,19 @@
-
-// Note: We'll use a mock implementation since the actual SDK might not be available in this environment
-// import init, { defaultConfig, connect, BreezSdkLiquid } from '@breeztech/breez-sdk-liquid';
+import { 
+  defaultConfig, 
+  connect, 
+  BreezSdkLiquid,
+  LiquidNetwork,
+  Config,
+  ReceivePaymentRequest,
+  PrepareReceivePaymentRequest,
+  PrepareReceivePaymentResponse,
+  SendPaymentRequest,
+  PrepareSendPaymentRequest,
+  PrepareSendPaymentResponse,
+  PaymentState,
+  Payment,
+  GetInfoResponse
+} from '@breeztech/breez-sdk-liquid';
 
 export interface BreezInvoice {
   id: string;
@@ -38,15 +51,29 @@ export interface BreezTransaction {
 }
 
 export class BreezSDKService {
-  private static sdk: any | null = null;
+  private static sdk: BreezSdkLiquid | null = null;
   private static isInitialized = false;
+  private static config: Config | null = null;
 
   private static async ensureInitialized(): Promise<void> {
     if (!this.isInitialized) {
       console.log('Initializing Breez SDK...');
-      // For now, we'll simulate SDK initialization
-      // await init();
+      
+      const apiKey = import.meta.env.VITE_BREEZ_API_KEY;
+      const network = import.meta.env.VITE_BREEZ_NETWORK || 'mainnet';
+      
+      if (!apiKey) {
+        throw new Error('VITE_BREEZ_API_KEY environment variable is not set');
+      }
+
+      // Create configuration for mainnet
+      this.config = defaultConfig(
+        network === 'mainnet' ? LiquidNetwork.MAINNET : LiquidNetwork.TESTNET,
+        apiKey
+      );
+      
       this.isInitialized = true;
+      console.log(`Breez SDK initialized for ${network}`);
     }
   }
 
@@ -54,32 +81,26 @@ export class BreezSDKService {
     try {
       await this.ensureInitialized();
 
-      const apiKey = import.meta.env.VITE_BREEZ_API_KEY;
-      if (!apiKey) {
-        throw new Error('VITE_BREEZ_API_KEY environment variable is not set');
+      if (!this.config) {
+        throw new Error('Breez SDK configuration not initialized');
       }
 
-      console.log('Creating Breez SDK config...');
-      // const config = defaultConfig('mainnet', apiKey);
-      
       console.log('Connecting to Breez SDK...');
-      // this.sdk = await connect({ mnemonic, config });
       
-      // Mock SDK connection for now
-      this.sdk = {
-        connected: true,
+      // Connect to the Breez SDK with mnemonic and config
+      this.sdk = await connect({
         mnemonic,
-        apiKey
-      };
+        config: this.config
+      });
       
       console.log('Successfully connected to Breez SDK');
     } catch (error) {
       console.error('Failed to connect to Breez SDK:', error);
-      throw error;
+      throw new Error(`Breez SDK connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  private static ensureConnected(): any {
+  private static ensureConnected(): BreezSdkLiquid {
     if (!this.sdk) {
       throw new Error('Breez SDK not connected. Call connect() first.');
     }
@@ -94,13 +115,27 @@ export class BreezSDKService {
       console.log('Creating invoice with Breez SDK:', { amount, description });
       const sdk = this.ensureConnected();
       
-      // Mock invoice creation
-      const invoiceId = `inv_${Date.now()}`;
-      const bolt11 = `lnbc${amount}u1p${Math.random().toString(36).substring(2, 15)}`;
+      // Prepare receive payment request
+      const prepareRequest: PrepareReceivePaymentRequest = {
+        paymentMethod: {
+          type: 'lightning',
+          invoiceAmountMsat: amount * 1000 // Convert sats to millisats
+        }
+      };
+
+      const prepareResponse: PrepareReceivePaymentResponse = await sdk.prepareReceivePayment(prepareRequest);
+      
+      // Create the actual receive payment request
+      const receiveRequest: ReceivePaymentRequest = {
+        prepareResponse,
+        description: description || 'Lightning payment'
+      };
+
+      const receiveResponse = await sdk.receivePayment(receiveRequest);
       
       return {
-        id: invoiceId,
-        bolt11,
+        id: receiveResponse.id,
+        bolt11: receiveResponse.destination,
         amount,
         description,
         status: 'pending',
@@ -109,7 +144,7 @@ export class BreezSDKService {
       };
     } catch (error) {
       console.error('Failed to create invoice:', error);
-      throw error;
+      throw new Error(`Invoice creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -118,20 +153,31 @@ export class BreezSDKService {
       console.log('Paying invoice with Breez SDK:', bolt11);
       const sdk = this.ensureConnected();
       
-      // Mock payment
-      const paymentId = `pay_${Date.now()}`;
+      // Prepare send payment request
+      const prepareRequest: PrepareSendPaymentRequest = {
+        destination: bolt11
+      };
+
+      const prepareResponse: PrepareSendPaymentResponse = await sdk.prepareSendPayment(prepareRequest);
+      
+      // Create the actual send payment request
+      const sendRequest: SendPaymentRequest = {
+        prepareResponse
+      };
+
+      const sendResponse = await sdk.sendPayment(sendRequest);
       
       return {
-        id: paymentId,
+        id: sendResponse.payment.id,
         bolt11,
-        amount: 1000, // Mock amount
-        description: 'Lightning payment',
-        status: 'complete',
-        createdAt: new Date().toISOString(),
+        amount: Math.floor(sendResponse.payment.amountMsat / 1000), // Convert millisats to sats
+        description: sendResponse.payment.description || 'Lightning payment',
+        status: sendResponse.payment.paymentState === PaymentState.COMPLETE ? 'complete' : 'pending',
+        createdAt: new Date(sendResponse.payment.timestamp * 1000).toISOString(),
       };
     } catch (error) {
       console.error('Failed to pay invoice:', error);
-      throw error;
+      throw new Error(`Payment failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -140,15 +186,16 @@ export class BreezSDKService {
       console.log('Getting balance from Breez SDK');
       const sdk = this.ensureConnected();
       
-      // Mock balance
+      const info: GetInfoResponse = await sdk.getInfo();
+      
       return {
-        balance: 50000, // 50k sats
-        pendingReceive: 0,
-        pendingSend: 0,
+        balance: Math.floor(info.balanceSat),
+        pendingReceive: Math.floor(info.pendingReceiveSat),
+        pendingSend: Math.floor(info.pendingSendSat),
       };
     } catch (error) {
       console.error('Failed to get balance:', error);
-      throw error;
+      throw new Error(`Balance retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -157,30 +204,21 @@ export class BreezSDKService {
       console.log('Getting transactions from Breez SDK');
       const sdk = this.ensureConnected();
       
-      // Mock transactions
-      return [
-        {
-          id: 'tx_1',
-          type: 'receive',
-          amount: 25000,
-          description: 'Lightning payment received',
-          status: 'complete',
-          timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-          bolt11: `lnbc25000u1p${Math.random().toString(36).substring(2, 15)}`,
-        },
-        {
-          id: 'tx_2',
-          type: 'send',
-          amount: 10000,
-          description: 'Lightning payment sent',
-          status: 'complete',
-          timestamp: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
-          bolt11: `lnbc10000u1p${Math.random().toString(36).substring(2, 15)}`,
-        }
-      ];
+      const payments: Payment[] = await sdk.listPayments({});
+      
+      return payments.map(payment => ({
+        id: payment.id,
+        type: payment.paymentType === 'receive' ? 'receive' : 'send',
+        amount: Math.floor(payment.amountMsat / 1000), // Convert millisats to sats
+        description: payment.description || 'Lightning payment',
+        status: payment.paymentState === PaymentState.COMPLETE ? 'complete' : 
+                payment.paymentState === PaymentState.FAILED ? 'failed' : 'pending',
+        timestamp: new Date(payment.timestamp * 1000).toISOString(),
+        bolt11: payment.destination,
+      }));
     } catch (error) {
       console.error('Failed to get transactions:', error);
-      throw error;
+      throw new Error(`Transaction retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -189,31 +227,53 @@ export class BreezSDKService {
       console.log('Getting invoice status from Breez SDK:', invoiceId);
       const sdk = this.ensureConnected();
       
-      // Mock invoice status
+      const payments = await sdk.listPayments({});
+      const payment = payments.find(p => p.id === invoiceId);
+      
+      if (!payment) {
+        throw new Error('Invoice not found');
+      }
+      
       return {
-        id: invoiceId,
-        bolt11: `lnbc1000u1p${Math.random().toString(36).substring(2, 15)}`,
-        amount: 1000,
-        description: 'Invoice',
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        id: payment.id,
+        bolt11: payment.destination || '',
+        amount: Math.floor(payment.amountMsat / 1000),
+        description: payment.description,
+        status: payment.paymentState === PaymentState.COMPLETE ? 'paid' : 
+                payment.paymentState === PaymentState.FAILED ? 'expired' : 'pending',
+        createdAt: new Date(payment.timestamp * 1000).toISOString(),
+        expiresAt: new Date(payment.timestamp * 1000 + 3600000).toISOString(),
       };
     } catch (error) {
       console.error('Failed to get invoice status:', error);
-      throw error;
+      throw new Error(`Invoice status retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   static async disconnect(): Promise<void> {
     if (this.sdk) {
       try {
-        // await this.sdk.disconnect();
+        await this.sdk.disconnect();
         this.sdk = null;
         console.log('Disconnected from Breez SDK');
       } catch (error) {
         console.error('Failed to disconnect from Breez SDK:', error);
       }
     }
+  }
+
+  static async sync(): Promise<void> {
+    try {
+      const sdk = this.ensureConnected();
+      await sdk.sync();
+      console.log('Breez SDK synchronized');
+    } catch (error) {
+      console.error('Failed to sync Breez SDK:', error);
+      throw new Error(`Sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  static isConnected(): boolean {
+    return this.sdk !== null;
   }
 }
