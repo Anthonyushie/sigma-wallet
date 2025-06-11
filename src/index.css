@@ -111,6 +111,27 @@
   .electric-glow {
     @apply shadow-[0_0_20px_#00BFFF];
   }
+
+  /* Special handling for send/receive buttons in dark mode */
+  .dark .bg-electric-blue {
+    background-color: #00BFFF !important;
+    color: white !important;
+  }
+
+  .dark .bg-electric-lime {
+    background-color: #32FF32 !important;
+    color: white !important;
+  }
+
+  .dark .bg-electric-orange {
+    background-color: #FF6B00 !important;
+    color: white !important;
+  }
+
+  .dark .bg-electric-purple {
+    background-color: #8A2BE2 !important;
+    color: white !important;
+  }
 }
 
 /* Dark mode overrides for all white backgrounds */
@@ -134,14 +155,6 @@
 
 .dark .border-black {
   @apply border-white;
-}
-
-/* Specific overrides for balance cards and other components */
-.dark .bg-electric-blue,
-.dark .bg-electric-lime,
-.dark .bg-electric-orange {
-  /* Keep electric colors but ensure text is readable */
-  color: black !important;
 }
 
 @keyframes slide-down {
