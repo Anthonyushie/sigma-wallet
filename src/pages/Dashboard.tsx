@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Settings } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import Layout from '../components/Layout';
 import BalanceCard from '../components/BalanceCard';
@@ -15,6 +16,16 @@ const Dashboard: React.FC = () => {
     <Layout title="SIGMA WALLET">
       <div className="max-w-md mx-auto space-y-6">
         
+        {/* Settings Button */}
+        <div className="flex justify-end">
+          <button
+            onClick={() => navigate('/settings')}
+            className="brutal-button p-3 shadow-brutal hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+          >
+            <Settings size={20} />
+          </button>
+        </div>
+
         {/* Balance Cards */}
         <div className="space-y-4">
           <BalanceCard

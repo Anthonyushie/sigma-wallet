@@ -11,6 +11,7 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Send from "./pages/Send";
 import Receive from "./pages/Receive";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,14 @@ const AppRoutes = () => {
         element={
           wallet.isOnboarded ? 
             <Receive /> : 
+            <Navigate to="/onboarding" replace />
+        } 
+      />
+      <Route 
+        path="/settings" 
+        element={
+          wallet.isOnboarded ? 
+            <Settings /> : 
             <Navigate to="/onboarding" replace />
         } 
       />

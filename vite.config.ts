@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import wasm from "vite-plugin-wasm";
@@ -27,7 +26,7 @@ export default defineConfig(({ mode }) => ({
     global: 'globalThis',
   },
   optimizeDeps: {
-    exclude: ['tiny-secp256k1'],
+    exclude: ['tiny-secp256k1', '@breeztech/breez-sdk-liquid'],
     include: ['buffer']
   },
   build: {
@@ -38,5 +37,8 @@ export default defineConfig(({ mode }) => ({
         format: 'es'
       }
     }
+  },
+  worker: {
+    format: 'es'
   }
 }));

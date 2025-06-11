@@ -140,34 +140,93 @@ const Send: React.FC = () => {
   );
 
   const renderSuccessScreen = () => (
-    <div className="space-y-6">
-      <div className="brutal-card bg-electric-lime text-black text-center">
-        <h2 className="text-3xl font-black mb-4">✅ PAYMENT SENT!</h2>
-        <p className="font-mono text-lg">
-          Your transaction has been broadcast
-        </p>
-      </div>
-
-      <div className="brutal-card">
-        <div className="space-y-2">
-          <p className="font-black uppercase text-sm">AMOUNT SENT</p>
-          <p className="font-mono text-2xl font-black">
-            {sendFlow.amount} BTC
-          </p>
+    <div className="space-y-6 relative overflow-hidden">
+      {/* GIGACHAD Animation Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-r from-electric-blue via-electric-purple to-electric-lime opacity-20 animate-pulse"></div>
+        <div className="gigachad-animation">
+          <img 
+            src="/lovable-uploads/ea45c64a-f7d3-4f99-b2b9-c7425cf7f77b.png" 
+            alt="GIGACHAD" 
+            className="gigachad-image"
+          />
         </div>
       </div>
 
-      <ActionButton
-        onClick={() => {
-          resetSendFlow();
-          navigate('/dashboard');
-        }}
-        variant="primary"
-        size="lg"
-        className="w-full"
-      >
-        BACK TO DASHBOARD
-      </ActionButton>
+      {/* Success Content */}
+      <div className="relative z-10">
+        <div className="brutal-card bg-electric-lime text-black text-center border-4 border-black shadow-brutal-lg">
+          <h2 className="text-4xl font-black mb-4 animate-bounce">✅ GIGACHAD PAYMENT SENT!</h2>
+          <p className="font-mono text-xl font-black">
+            ABSOLUTE UNIT OF A TRANSACTION
+          </p>
+          <p className="font-mono text-lg mt-2">
+            CHAD LEVEL: MAXIMUM
+          </p>
+        </div>
+
+        <div className="brutal-card bg-electric-blue text-black border-4 border-black shadow-brutal">
+          <div className="space-y-2">
+            <p className="font-black uppercase text-sm">GIGACHAD AMOUNT SENT</p>
+            <p className="font-mono text-3xl font-black animate-pulse">
+              {sendFlow.amount} BTC
+            </p>
+            <p className="font-mono text-sm">
+              💪 TRANSACTION STATUS: ALPHA 💪
+            </p>
+          </div>
+        </div>
+
+        <ActionButton
+          onClick={() => {
+            resetSendFlow();
+            navigate('/dashboard');
+          }}
+          variant="primary"
+          size="lg"
+          className="w-full font-black text-xl animate-pulse"
+        >
+          BACK TO CHAD DASHBOARD
+        </ActionButton>
+      </div>
+
+      <style>{`
+        .gigachad-animation {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1;
+          pointer-events: none;
+        }
+        
+        .gigachad-image {
+          width: 300px;
+          height: auto;
+          opacity: 0.15;
+          animation: gigachad-spin 3s linear infinite, gigachad-pulse 2s ease-in-out infinite alternate;
+          filter: brightness(1.5) contrast(1.2);
+        }
+        
+        @keyframes gigachad-spin {
+          0% { transform: rotate(0deg) scale(1); }
+          25% { transform: rotate(90deg) scale(1.2); }
+          50% { transform: rotate(180deg) scale(1); }
+          75% { transform: rotate(270deg) scale(1.2); }
+          100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        @keyframes gigachad-pulse {
+          0% { 
+            opacity: 0.1; 
+            filter: brightness(1) contrast(1) hue-rotate(0deg);
+          }
+          100% { 
+            opacity: 0.3; 
+            filter: brightness(2) contrast(1.5) hue-rotate(360deg);
+          }
+        }
+      `}</style>
     </div>
   );
 
