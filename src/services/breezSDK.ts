@@ -1,19 +1,4 @@
-import { 
-  defaultConfig, 
-  connect, 
-  BreezSdkLiquid,
-  LiquidNetwork,
-  Config,
-  ReceivePaymentRequest,
-  PrepareReceivePaymentRequest,
-  PrepareReceivePaymentResponse,
-  SendPaymentRequest,
-  PrepareSendPaymentRequest,
-  PrepareSendPaymentResponse,
-  PaymentState,
-  Payment,
-  GetInfoResponse
-} from '@breeztech/breez-sdk-liquid';
+import * as BreezSDK from '@breeztech/breez-sdk-liquid';
 
 export interface BreezInvoice {
   id: string;
@@ -51,13 +36,16 @@ export interface BreezTransaction {
 }
 
 export class BreezSDKService {
-  private static sdk: BreezSdkLiquid | null = null;
+  private static sdk: any | null = null;
   private static isInitialized = false;
-  private static config: Config | null = null;
+  private static config: BreezSDK.Config | null = null;
 
   private static async ensureInitialized(): Promise<void> {
     if (!this.isInitialized) {
       console.log('Initializing Breez SDK...');
+      
+      // Initialize the SDK first to load WASM module and constants
+      await BreezSDK.initSDK();
       
       const apiKey = import.meta.env.VITE_BREEZ_API_KEY;
       const network = import.meta.env.VITE_BREEZ_NETWORK || 'mainnet';
@@ -67,8 +55,8 @@ export class BreezSDKService {
       }
 
       // Create configuration for mainnet
-      this.config = defaultConfig(
-        network === 'mainnet' ? LiquidNetwork.MAINNET : LiquidNetwork.TESTNET,
+      this.config = BreezSDK.defaultConfig(
+        network === 'mainnet' ? BreezSDK.LiquidNetwork.MAINNET : BreezSDK.LiquidNetwork.TESTNET,
         apiKey
       );
       
@@ -88,7 +76,7 @@ export class BreezSDKService {
       console.log('Connecting to Breez SDK...');
       
       // Connect to the Breez SDK with mnemonic and config
-      this.sdk = await connect({
+      this.sdk = await BreezSDK.connect({
         mnemonic,
         config: this.config
       });
@@ -100,7 +88,7 @@ export class BreezSDKService {
     }
   }
 
-  private static ensureConnected(): BreezSdkLiquid {
+  private static ensureConnected(): any {
     if (!this.sdk) {
       throw new Error('Breez SDK not connected. Call connect() first.');
     }
@@ -116,17 +104,17 @@ export class BreezSDKService {
       const sdk = this.ensureConnected();
       
       // Prepare receive payment request
-      const prepareRequest: PrepareReceivePaymentRequest = {
+      const prepareRequest: BreezSDK.PrepareReceivePaymentRequest = {
         paymentMethod: {
           type: 'lightning',
           invoiceAmountMsat: amount * 1000 // Convert sats to millisats
         }
       };
 
-      const prepareResponse: PrepareReceivePaymentResponse = await sdk.prepareReceivePayment(prepareRequest);
+      const prepareResponse: BreezSDK.PrepareReceivePaymentResponse = await sdk.prepareReceivePayment(prepareRequest);
       
       // Create the actual receive payment request
-      const receiveRequest: ReceivePaymentRequest = {
+      const receiveRequest: BreezSDK.ReceivePaymentRequest = {
         prepareResponse,
         description: description || 'Lightning payment'
       };
@@ -154,14 +142,14 @@ export class BreezSDKService {
       const sdk = this.ensureConnected();
       
       // Prepare send payment request
-      const prepareRequest: PrepareSendPaymentRequest = {
+      const prepareRequest: BreezSDK.PrepareSendPaymentRequest = {
         destination: bolt11
       };
 
-      const prepareResponse: PrepareSendPaymentResponse = await sdk.prepareSendPayment(prepareRequest);
+      const prepareResponse: BreezSDK.PrepareSendPaymentResponse = await sdk.prepareSendPayment(prepareRequest);
       
       // Create the actual send payment request
-      const sendRequest: SendPaymentRequest = {
+      const sendRequest: BreezSDK.SendPaymentRequest = {
         prepareResponse
       };
 
@@ -172,7 +160,7 @@ export class BreezSDKService {
         bolt11,
         amount: Math.floor(sendResponse.payment.amountMsat / 1000), // Convert millisats to sats
         description: sendResponse.payment.description || 'Lightning payment',
-        status: sendResponse.payment.paymentState === PaymentState.COMPLETE ? 'complete' : 'pending',
+        status: sendResponse.payment.paymentState === BreezSDK.PaymentState.COMPLETE ? 'complete' : 'pending',
         createdAt: new Date(sendResponse.payment.timestamp * 1000).toISOString(),
       };
     } catch (error) {
@@ -186,7 +174,7 @@ export class BreezSDKService {
       console.log('Getting balance from Breez SDK');
       const sdk = this.ensureConnected();
       
-      const info: GetInfoResponse = await sdk.getInfo();
+      const info: BreezSDK.GetInfoResponse = await sdk.getInfo();
       
       return {
         balance: Math.floor(info.balanceSat),
@@ -204,15 +192,15 @@ export class BreezSDKService {
       console.log('Getting transactions from Breez SDK');
       const sdk = this.ensureConnected();
       
-      const payments: Payment[] = await sdk.listPayments({});
+      const payments: BreezSDK.Payment[] = await sdk.listPayments({});
       
       return payments.map(payment => ({
         id: payment.id,
         type: payment.paymentType === 'receive' ? 'receive' : 'send',
         amount: Math.floor(payment.amountMsat / 1000), // Convert millisats to sats
         description: payment.description || 'Lightning payment',
-        status: payment.paymentState === PaymentState.COMPLETE ? 'complete' : 
-                payment.paymentState === PaymentState.FAILED ? 'failed' : 'pending',
+        status: payment.paymentState === BreezSDK.PaymentState.COMPLETE ? 'complete' : 
+                payment.paymentState === BreezSDK.PaymentState.FAILED ? 'failed' : 'pending',
         timestamp: new Date(payment.timestamp * 1000).toISOString(),
         bolt11: payment.destination,
       }));
@@ -239,8 +227,8 @@ export class BreezSDKService {
         bolt11: payment.destination || '',
         amount: Math.floor(payment.amountMsat / 1000),
         description: payment.description,
-        status: payment.paymentState === PaymentState.COMPLETE ? 'paid' : 
-                payment.paymentState === PaymentState.FAILED ? 'expired' : 'pending',
+        status: payment.paymentState === BreezSDK.PaymentState.COMPLETE ? 'paid' : 
+                payment.paymentState === BreezSDK.PaymentState.FAILED ? 'expired' : 'pending',
         createdAt: new Date(payment.timestamp * 1000).toISOString(),
         expiresAt: new Date(payment.timestamp * 1000 + 3600000).toISOString(),
       };
