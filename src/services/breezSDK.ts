@@ -44,6 +44,9 @@ export class BreezSDKService {
     if (!this.isInitialized) {
       console.log('Initializing Breez SDK...');
       
+      // Initialize the SDK first to load WASM module and constants
+      await BreezSDK.initSDK();
+      
       const apiKey = import.meta.env.VITE_BREEZ_API_KEY;
       const network = import.meta.env.VITE_BREEZ_NETWORK || 'mainnet';
       
