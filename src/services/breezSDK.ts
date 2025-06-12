@@ -1,7 +1,6 @@
 import { 
   defaultConfig, 
   connect, 
-  BreezSdkLiquid,
   Config,
   ReceivePaymentRequest,
   PrepareReceivePaymentRequest,
@@ -11,7 +10,8 @@ import {
   PrepareSendPaymentResponse,
   PaymentState,
   Payment,
-  GetInfoResponse
+  GetInfoResponse,
+  LiquidNetwork
 } from '@breeztech/breez-sdk-liquid';
 
 export interface BreezInvoice {
@@ -50,7 +50,7 @@ export interface BreezTransaction {
 }
 
 export class BreezSDKService {
-  private static sdk: BreezSdkLiquid | null = null;
+  private static sdk: any | null = null;
   private static isInitialized = false;
   private static config: Config | null = null;
 
@@ -67,7 +67,7 @@ export class BreezSDKService {
 
       // Create configuration for mainnet
       this.config = defaultConfig(
-        network === 'mainnet' ? BreezSdkLiquid.LiquidNetwork.MAINNET : BreezSdkLiquid.LiquidNetwork.TESTNET,
+        network === 'mainnet' ? LiquidNetwork.MAINNET : LiquidNetwork.TESTNET,
         apiKey
       );
       
@@ -99,7 +99,7 @@ export class BreezSDKService {
     }
   }
 
-  private static ensureConnected(): BreezSdkLiquid {
+  private static ensureConnected(): any {
     if (!this.sdk) {
       throw new Error('Breez SDK not connected. Call connect() first.');
     }
