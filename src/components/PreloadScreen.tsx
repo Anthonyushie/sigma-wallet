@@ -1,4 +1,3 @@
-import Sigma from "../assets/sigma.jpeg"
 import React, { useEffect, useState } from 'react';
 
 interface PreloadScreenProps {
@@ -69,17 +68,15 @@ const PreloadScreen: React.FC<PreloadScreenProps> = ({ onComplete }) => {
 
       {/* Main content container */}
       <div className="relative z-10 text-center">
-        {/* Image with crazy effects */}
+        {/* Placeholder for image */}
         <div className="relative mb-8">
           <div className={`
             transform transition-all duration-300
             ${glitchActive ? 'scale-110 rotate-2 hue-rotate-180' : 'scale-100 rotate-0'}
           `}>
-            <img
-              src={Sigma}
-              alt="Loading"
+            <div
               className={`
-                w-48 h-48 object-cover border-8 border-black shadow-brutal-lg
+                w-48 h-48 bg-gradient-to-br from-electric-blue to-electric-purple border-8 border-black shadow-brutal-lg flex items-center justify-center text-6xl font-black
                 ${glitchActive ? 'filter brightness-200 contrast-150 saturate-200' : ''}
                 animate-pulse-electric
               `}
@@ -87,7 +84,9 @@ const PreloadScreen: React.FC<PreloadScreenProps> = ({ onComplete }) => {
                 clipPath: progress > 50 ? 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' : 'polygon(50% 0, 50% 0, 50% 100%, 50% 100%)',
                 transition: 'clip-path 0.5s ease-out'
               }}
-            />
+            >
+              Σ
+            </div>
           </div>
           
           {/* Glitch overlay */}
