@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy } from 'lucide-react';
@@ -95,11 +94,9 @@ const Receive: React.FC = () => {
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-r from-electric-purple via-electric-orange to-electric-blue opacity-25 animate-pulse"></div>
         <div className="boss-animation">
-          <img 
-            src="/lovable-uploads/1df32685-ac5a-4520-94cc-6af5606388ef.png" 
-            alt="BOSS MODE" 
-            className="boss-image"
-          />
+          <div className="boss-image-placeholder">
+            💪
+          </div>
         </div>
         {/* Additional floating elements */}
         <div className="money-rain">
@@ -179,12 +176,19 @@ const Receive: React.FC = () => {
           pointer-events: none;
         }
         
-        .boss-image {
+        .boss-image-placeholder {
           width: 280px;
-          height: auto;
+          height: 280px;
           opacity: 0.12;
           animation: boss-float 4s ease-in-out infinite, boss-glow 3s ease-in-out infinite alternate;
           filter: brightness(1.8) contrast(1.3) sepia(0.3) hue-rotate(30deg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 8rem;
+          background: linear-gradient(45deg, #00BFFF, #8A2BE2);
+          border-radius: 50%;
+          border: 8px solid #000;
         }
         
         .money-rain {

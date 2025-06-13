@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../context/WalletContext';
@@ -145,11 +144,9 @@ const Send: React.FC = () => {
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-r from-electric-blue via-electric-purple to-electric-lime opacity-20 animate-pulse"></div>
         <div className="gigachad-animation">
-          <img 
-            src="/lovable-uploads/ea45c64a-f7d3-4f99-b2b9-c7425cf7f77b.png" 
-            alt="GIGACHAD" 
-            className="gigachad-image"
-          />
+          <div className="gigachad-image-placeholder">
+            🗿
+          </div>
         </div>
       </div>
 
@@ -200,12 +197,19 @@ const Send: React.FC = () => {
           pointer-events: none;
         }
         
-        .gigachad-image {
+        .gigachad-image-placeholder {
           width: 300px;
-          height: auto;
+          height: 300px;
           opacity: 0.15;
           animation: gigachad-spin 3s linear infinite, gigachad-pulse 2s ease-in-out infinite alternate;
           filter: brightness(1.5) contrast(1.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10rem;
+          background: linear-gradient(45deg, #00BFFF, #32FF32);
+          border-radius: 20px;
+          border: 8px solid #000;
         }
         
         @keyframes gigachad-spin {
