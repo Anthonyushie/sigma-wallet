@@ -209,8 +209,24 @@ export class BreezService {
       };
 
       console.log('Calling SDK receivePayment with:', prepareRequest);
-      const invoice = await this.sdk.receivePayment(prepareRequest);
-      console.log('SDK receivePayment response:', invoice);
+
+      const invoiceRawResponse = await this.sdk.receivePayment(prepareRequest);
+      console.log('SDK receivePayment RAW response:', invoiceRawResponse);
+
+      // Fix: Breez SDK sometimes returns { prepareResponse: { ...invoice fields... } }
+      // Or just the invoice itself. Try both.
+      let invoice;
+      if (invoiceRawResponse.prepareResponse) {
+        console.log("Found prepareResponse in SDK response");
+        invoice = invoiceRawResponse.prepareResponse;
+      } else {
+        invoice = invoiceRawResponse;
+      }
+      console.log('Parsed invoice in createInvoice:', invoice);
+
+      if (!invoice.bolt11 || !invoice.paymentHash) {
+        throw new Error('INVOICE_RESPONSE_INVALID: Missing bolt11 or paymentHash in SDK response');
+      }
 
       return {
         bolt11: invoice.bolt11,
@@ -223,7 +239,7 @@ export class BreezService {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       });
-      
+
       // Handle specific serialization errors
       if (error instanceof Error && error.message.includes('prepareResponse')) {
         throw new Error('SERIALIZATION_ERROR: Failed to parse invoice response');
