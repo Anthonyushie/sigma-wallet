@@ -26,8 +26,8 @@ export default defineConfig(({ mode }) => ({
     global: 'globalThis',
   },
   optimizeDeps: {
-    exclude: ['tiny-secp256k1'],
-    include: ['buffer', '@breeztech/breez-sdk-liquid']
+    exclude: ['tiny-secp256k1', '@breeztech/breez-sdk-liquid'],
+    include: ['buffer']
   },
   build: {
     target: 'esnext',
