@@ -1,4 +1,3 @@
-
 import init, {
   connect,
   defaultConfig,
@@ -204,10 +203,8 @@ export class BreezService {
 
       // Step 1: Prepare the receive payment request with correct BOLT11 format
       const prepareRequest = {
-        paymentMethod: {
-          type: "bolt11Invoice",
-          payerAmountSat: amountSats
-        },
+        paymentMethod: "bolt11Invoice", // Use correct variant for BOLT11 invoice
+        payerAmountSat: amountSats,     // Must be top-level property
         description: description || 'Lightning payment'
       };
 
