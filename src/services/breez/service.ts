@@ -173,12 +173,11 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountSats, amountMsat, description });
 
-      // For bolt11Invoice, we need to structure this as a Lightning invoice request
+      // Use correct tagged union structure
       const prepareRequest = {
         paymentMethod: {
-          type: "lightning",
-          invoice: {
-            amountMsat: amountMsat,
+          lightning: {
+            amountMsat,
             description: description || 'Lightning payment'
           }
         }
@@ -186,7 +185,7 @@ export class BreezService {
 
       console.log('Calling SDK prepareReceivePayment with:', prepareRequest);
 
-      // Use prepareReceivePayment first
+      // Use prepareReceivePayment with fixed request shape
       const prepareResponse = await this.sdk.prepareReceivePayment(prepareRequest);
       console.log('SDK prepareReceivePayment response:', prepareResponse);
 
