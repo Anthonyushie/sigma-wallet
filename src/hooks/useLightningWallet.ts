@@ -43,6 +43,21 @@ export const useLightningWallet = () => {
 
   const handleError = useCallback((error: unknown): BreezError => {
     const breezError = BreezErrorHandler.handleError(error);
+    
+    // Check for specific error types that should not block wallet creation
+    if (error instanceof Error) {
+      if (error.message.includes('BREEZ_AUTH_MISSING')) {
+        console.log('Breez authentication not configured, using mock mode');
+        return breezError;
+      } else if (error.message.includes('TIMEOUT_ERROR')) {
+        console.log('Breez connection timed out, using mock mode');
+        return breezError;
+      } else if (error.message.includes('memory access out of bounds')) {
+        console.log('Breez WASM memory error, using mock mode');
+        return breezError;
+      }
+    }
+    
     setError(breezError);
     return breezError;
   }, [setError]);
@@ -114,7 +129,7 @@ export const useLightningWallet = () => {
             walletKeys,
           }));
 
-          // Try to initialize Breez SDK, but don't fail if it doesn't work
+          // Try Breez SDK with better error handling
           try {
             setConnecting(true);
             await breezService.initialize(mnemonic);
@@ -122,8 +137,16 @@ export const useLightningWallet = () => {
             await updateBalanceFromBreez();
           } catch (breezError) {
             setConnecting(false);
-            console.log('Breez SDK initialization failed, using mock mode:', breezError);
-            // Set mock balance when Breez fails
+            const error = handleError(breezError);
+            
+            // Only show error if it's not an expected fallback case
+            if (!error.message.includes('authentication') && 
+                !error.message.includes('timeout') && 
+                !error.message.includes('memory access')) {
+              console.error('Unexpected Breez error:', breezError);
+            }
+            
+            // Always set mock balance as fallback
             setState(prev => ({
               ...prev,
               balance: { balance: 25000, pendingReceive: 0, pendingSend: 0 },
@@ -152,7 +175,7 @@ export const useLightningWallet = () => {
         walletKeys,
       }));
 
-      // Try to initialize Breez SDK, but don't fail if it doesn't work
+      // Try Breez SDK initialization
       try {
         setConnecting(true);
         await breezService.initialize(walletKeys.mnemonic);
@@ -160,8 +183,9 @@ export const useLightningWallet = () => {
         await updateBalanceFromBreez();
       } catch (breezError) {
         setConnecting(false);
-        console.log('Breez SDK initialization failed, using mock mode:', breezError);
-        // Set mock balance when Breez fails
+        handleError(breezError);
+        
+        // Set mock balance for development
         setState(prev => ({
           ...prev,
           balance: { balance: 25000, pendingReceive: 0, pendingSend: 0 },
@@ -191,7 +215,7 @@ export const useLightningWallet = () => {
         walletKeys,
       }));
 
-      // Try to initialize Breez SDK, but don't fail if it doesn't work
+      // Try Breez SDK, but don't fail if it doesn't work
       try {
         setConnecting(true);
         await breezService.initialize(mnemonic);
@@ -235,7 +259,6 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      // Check if wallet is initialized (not necessarily Breez SDK)
       if (!state.isInitialized) {
         throw new Error('Wallet not initialized');
       }
@@ -259,10 +282,11 @@ export const useLightningWallet = () => {
           return invoice;
         } catch (breezError) {
           console.log('Breez invoice creation failed, using mock:', breezError);
+          // Don't throw here, fall through to mock
         }
       }
 
-      // Fallback to mock invoice if Breez SDK fails or is not ready
+      // Fallback to mock invoice
       console.log('Creating mock invoice for development/testing');
       const mockInvoice = generateMockInvoice(amount, description);
       return mockInvoice;
@@ -279,7 +303,6 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      // Check if wallet is initialized (not necessarily Breez SDK)
       if (!state.isInitialized) {
         throw new Error('Wallet not initialized');
       }
@@ -302,12 +325,12 @@ export const useLightningWallet = () => {
           return payment;
         } catch (breezError) {
           console.log('Breez payment failed, using mock:', breezError);
+          // Don't throw here, fall through to mock
         }
       }
 
-      // Fallback to mock payment if Breez SDK fails or is not ready
+      // Fallback to mock payment
       console.log('Creating mock payment for development/testing');
-      // Extract amount from invoice for mock payment (simplified extraction)
       const mockAmount = 1000; // Default mock amount
       const mockPayment = generateMockPayment(bolt11, mockAmount);
       return mockPayment;

@@ -31,6 +31,7 @@ export class BreezService {
   private sdk: any = null;
   private isInitialized = false;
   private initializedWasm = false;
+  private initializationPromise: Promise<void> | null = null;
 
   static getInstance(): BreezService {
     if (!BreezService.instance) {
@@ -39,75 +40,128 @@ export class BreezService {
     return BreezService.instance;
   }
 
-  // Ensure WASM init runs once before SDK logic
+  // Ensure WASM init runs once and handle memory issues
   private async ensureWasmInit(): Promise<void> {
-    if (!this.initializedWasm) {
+    if (this.initializedWasm) {
+      return;
+    }
+
+    try {
       await init();
       this.initializedWasm = true;
+      console.log('WASM initialized successfully');
+    } catch (error) {
+      console.error('WASM initialization failed:', error);
+      throw new Error('Failed to initialize WASM module');
     }
   }
 
   async initialize(mnemonic: string): Promise<void> {
+    // Prevent multiple concurrent initializations
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = this._initialize(mnemonic);
+    return this.initializationPromise;
+  }
+
+  private async _initialize(mnemonic: string): Promise<void> {
     try {
       if (this.isInitialized && this.sdk) {
         return;
       }
 
-      // Always initialize the WASM first!
-      await this.ensureWasmInit();
-
       console.log('Initializing Breez SDK...');
       
-      // Get certificate from environment or use empty string as fallback
+      // Clean up any existing state first
+      await this.cleanup();
+
+      // Initialize WASM with proper error handling
+      await this.ensureWasmInit();
+
+      // Get authentication from environment
       const breezCertificate = import.meta.env.VITE_BREEZ_CERTIFICATE || '';
       const breezApiKey = import.meta.env.VITE_BREEZ_API_KEY || '';
       
-      // If no valid certificate is provided, throw a specific error
+      // Require authentication
       if (!breezCertificate && !breezApiKey) {
-        throw new Error('No Breez authentication provided. Please set VITE_BREEZ_CERTIFICATE or VITE_BREEZ_API_KEY in your environment variables.');
+        throw new Error('BREEZ_AUTH_MISSING: No Breez authentication provided. Please set VITE_BREEZ_CERTIFICATE or VITE_BREEZ_API_KEY in your environment variables.');
       }
 
-      // Use "mainnet" string as websocket expects string not enum in Breez SDK
+      // Validate mnemonic before proceeding
+      if (!bip39.validateMnemonic(mnemonic)) {
+        throw new Error('INVALID_MNEMONIC: Invalid mnemonic phrase');
+      }
+
       const config = await defaultConfig("mainnet");
       
-      // Set the authentication method
+      // Set authentication
       if (breezCertificate) {
         config.breezApiKey = breezCertificate;
       } else if (breezApiKey) {
         config.breezApiKey = breezApiKey;
       }
 
-      // Convert mnemonic to proper seed using BIP39
+      // Convert mnemonic to seed
       const seed = this.mnemonicToSeed(mnemonic);
 
-      // Connect to Breez SDK
-      this.sdk = await connect({
+      // Connect with timeout and memory protection
+      const connectPromise = connect({
         config,
         seed: Array.from(seed)
       });
+
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Connection timeout')), 30000);
+      });
+
+      this.sdk = await Promise.race([connectPromise, timeoutPromise]);
       
       this.isInitialized = true;
       console.log('Breez SDK initialized successfully');
       
-      // Perform initial sync
-      await this.sync();
+      // Perform initial sync with error handling
+      try {
+        await this.sync();
+      } catch (syncError) {
+        console.warn('Initial sync failed, continuing anyway:', syncError);
+      }
+
     } catch (error) {
       console.error('Failed to initialize Breez SDK:', error);
-      throw new Error(`Breez SDK initialization failed: ${(error as Error).message}`);
+      await this.cleanup();
+      
+      // Categorize errors for better handling
+      if (error instanceof Error) {
+        if (error.message.includes('BREEZ_AUTH_MISSING')) {
+          throw error;
+        } else if (error.message.includes('INVALID_MNEMONIC')) {
+          throw error;
+        } else if (error.message.includes('timeout')) {
+          throw new Error(`TIMEOUT_ERROR: Breez SDK connection timed out: ${error.message}`);
+        } else {
+          throw new Error(`BREEZ_SDK_ERROR: Breez SDK initialization failed: ${error.message}`);
+        }
+      }
+      throw new Error('UNKNOWN_ERROR: Unknown error during Breez SDK initialization');
+    } finally {
+      this.initializationPromise = null;
     }
   }
 
   private mnemonicToSeed(mnemonic: string): Uint8Array {
-    // Use BIP39 to convert mnemonic to seed
-    if (!bip39.validateMnemonic(mnemonic)) {
-      throw new Error('Invalid mnemonic phrase');
+    try {
+      const seedBuffer = bip39.mnemonicToSeedSync(mnemonic);
+      return new Uint8Array(seedBuffer.slice(0, 32));
+    } catch (error) {
+      throw new Error('Failed to convert mnemonic to seed');
     }
-    const seedBuffer = bip39.mnemonicToSeedSync(mnemonic);
-    return new Uint8Array(seedBuffer.slice(0, 32)); // Take first 32 bytes
   }
 
   async getWalletInfo(): Promise<BreezWalletState> {
-    if (!this.sdk) {
+    if (!this.sdk || !this.isInitialized) {
       throw new Error('Breez SDK not initialized');
     }
 
@@ -126,15 +180,13 @@ export class BreezService {
   }
 
   async createInvoice(amountSats: number, description?: string): Promise<BreezInvoice> {
-    if (!this.sdk) {
+    if (!this.sdk || !this.isInitialized) {
       throw new Error('Breez SDK not initialized');
     }
 
     try {
-      // Convert sats to millisats
       const amountMsat = amountSats * 1000;
 
-      // Use receivePayment directly (per SDK docs)
       const invoice = await this.sdk.receivePayment({
         amountMsat,
         description: description || 'Lightning payment'
@@ -152,7 +204,7 @@ export class BreezService {
   }
 
   async payInvoice(bolt11: string): Promise<BreezPayment> {
-    if (!this.sdk) {
+    if (!this.sdk || !this.isInitialized) {
       throw new Error('Breez SDK not initialized');
     }
 
@@ -161,7 +213,6 @@ export class BreezService {
         throw new Error('Invalid Lightning invoice format');
       }
 
-      // Use sendPayment directly (per SDK docs)
       const payment = await this.sdk.sendPayment({
         bolt11
       });
@@ -178,7 +229,6 @@ export class BreezService {
   }
 
   private isValidLightningInvoice(invoice: string): boolean {
-    // Check if it's a valid BOLT11 invoice format
     const lowerInvoice = invoice.toLowerCase();
     return (
       lowerInvoice.startsWith('lnbc') ||
@@ -188,7 +238,7 @@ export class BreezService {
   }
 
   async sync(): Promise<void> {
-    if (!this.sdk) {
+    if (!this.sdk || !this.isInitialized) {
       throw new Error('Breez SDK not initialized');
     }
 
@@ -201,16 +251,22 @@ export class BreezService {
     }
   }
 
-  async disconnect(): Promise<void> {
+  private async cleanup(): Promise<void> {
     if (this.sdk) {
       try {
-        console.log('Disconnecting from Breez SDK');
+        // Attempt graceful cleanup
+        console.log('Cleaning up Breez SDK...');
+        this.sdk = null;
       } catch (error) {
-        console.error('Error disconnecting:', error);
+        console.error('Error during cleanup:', error);
       }
     }
-    this.sdk = null;
     this.isInitialized = false;
+  }
+
+  async disconnect(): Promise<void> {
+    await this.cleanup();
+    this.initializationPromise = null;
   }
 
   isReady(): boolean {
