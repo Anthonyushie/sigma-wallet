@@ -7,6 +7,7 @@ import Layout from '../components/Layout';
 import BalanceCard from '../components/BalanceCard';
 import TransactionItem from '../components/TransactionItem';
 import ActionButton from '../components/ActionButton';
+import LightningStatus from '../components/LightningStatus';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +26,9 @@ const Dashboard: React.FC = () => {
             <Settings size={20} />
           </button>
         </div>
+
+        {/* Lightning Status */}
+        <LightningStatus />
 
         {/* Balance Cards */}
         <div className="space-y-4">
@@ -52,7 +56,7 @@ const Dashboard: React.FC = () => {
             size="lg"
             className="w-full"
           >
-            SEND COIN
+            YEET SOME COIN
           </ActionButton>
           <ActionButton
             onClick={() => navigate('/receive')}
@@ -60,7 +64,7 @@ const Dashboard: React.FC = () => {
             size="lg"
             className="w-full"
           >
-            GET PAID
+            SECURE THE BAG
           </ActionButton>
         </div>
 
