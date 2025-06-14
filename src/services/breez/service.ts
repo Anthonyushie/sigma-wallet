@@ -174,12 +174,16 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountSats, amountMsat, description });
 
-      // Step 1: Prepare the receive payment request, including both msat and sat amounts
+      // Create the proper request structure for bolt11Invoice payment method
       const prepareRequest = {
-        paymentMethod: "bolt11Invoice",
-        amountMsat,
-        payerAmountSat: amountSats, // Adding this as it seems to be required
-        description: description || 'Lightning payment'
+        paymentMethod: {
+          type: "bolt11Invoice",
+          invoice: {
+            amountMsat: amountMsat,
+            description: description || 'Lightning payment'
+          }
+        },
+        payerAmountSat: amountSats // This is the key field that was missing
       };
 
       console.log('Calling SDK prepareReceivePayment with:', prepareRequest);
