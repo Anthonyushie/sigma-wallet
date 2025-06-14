@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="512" height="512" style="border: 1px solid #000;"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+        gradient.addColorStop(0, '#FFD700');
+        gradient.addColorStop(0.5, '#FFA500');
+        gradient.addColorStop(1, '#FF6B35');
+        
+        // Fill background
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 512, 512);
+        
+        // Draw Sigma symbol
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 300px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Σ', 256, 256);
+        
+        // Add lightning bolt
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.moveTo(350, 100);
+        ctx.lineTo(400, 100);
+        ctx.lineTo(320, 200);
+        ctx.lineTo(380, 200);
+        ctx.lineTo(280, 350);
+        ctx.lineTo(320, 220);
+        ctx.lineTo(270, 220);
+        ctx.closePath();
+        ctx.fill();
+        
+        console.log('Icon generated! Right-click to save as PNG.');
+    </script>
+</body>
+</html>
