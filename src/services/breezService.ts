@@ -1,4 +1,3 @@
-
 import { 
   connect, 
   defaultConfig,
@@ -10,7 +9,7 @@ import {
   sync,
   getInfo,
   PaymentState
-} from '@breeztech/breez-sdk-liquid';
+} from '@breeztech/breez-sdk-liquid/web';
 import * as bip39 from 'bip39';
 
 export interface BreezWalletState {
@@ -55,8 +54,8 @@ export class BreezService {
 
       console.log('Initializing Breez SDK with proper configuration...');
       
-      // Create config with mainnet
-      const config = await defaultConfig('mainnet');
+      // Create config with proper network enum
+      const config = await defaultConfig(LiquidNetwork.MAINNET);
       config.breezApiKey = BREEZ_CERTIFICATE;
 
       // Convert mnemonic to proper seed using BIP39
@@ -95,7 +94,7 @@ export class BreezService {
     }
 
     try {
-      const walletInfo = await this.sdk.getInfo();
+      const walletInfo = await getInfo();
       return {
         isConnected: true,
         balance: walletInfo.balanceSat || 0,
@@ -117,10 +116,15 @@ export class BreezService {
       // Convert sats to millisats
       const amountMsat = amountSats * 1000;
 
-      // Create invoice using SDK method
-      const invoice = await this.sdk.receivePayment({
+      // Prepare receive payment
+      const prepareResponse = await prepareReceivePayment({
         amountMsat,
         description: description || 'Lightning payment'
+      });
+
+      // Execute receive payment
+      const invoice = await receivePayment({
+        prepareResponse
       });
 
       return {
@@ -145,9 +149,14 @@ export class BreezService {
         throw new Error('Invalid Lightning invoice format');
       }
 
-      // Pay invoice using SDK method
-      const payment = await this.sdk.sendPayment({
+      // Prepare send payment
+      const prepareResponse = await prepareSendPayment({
         bolt11
+      });
+
+      // Execute send payment
+      const payment = await sendPayment({
+        prepareResponse
       });
 
       return {
@@ -177,7 +186,7 @@ export class BreezService {
     }
 
     try {
-      await this.sdk.sync();
+      await sync();
       console.log('Wallet synced successfully');
     } catch (error) {
       console.error('Failed to sync:', error);
