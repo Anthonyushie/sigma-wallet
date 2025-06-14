@@ -186,14 +186,13 @@ export class BreezService {
       console.log('Calling SDK prepareReceivePayment with:', prepareRequest);
 
       // Use prepareReceivePayment with fixed request shape
-      const prepareResponse = await this.sdk.prepareReceivePayment(prepareRequest);
-      console.log('SDK prepareReceivePayment response:', prepareResponse);
+      await this.sdk.prepareReceivePayment(prepareRequest);
+      console.log('SDK prepareReceivePayment responded OK');
 
-      // Step 2: Execute the receive payment with the prepared response
-      console.log('Calling SDK receivePayment with prepareResponse');
-      const invoiceResponse = await this.sdk.receivePayment({
-        prepareResponse: prepareResponse
-      });
+      // IMPORTANT: receivePayment expects NO arguments!
+      console.log('Calling SDK receivePayment with NO arguments');
+      const invoiceResponse = await this.sdk.receivePayment();
+
       console.log('SDK receivePayment final response:', invoiceResponse);
 
       // Extract the invoice data
