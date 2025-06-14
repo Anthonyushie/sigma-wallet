@@ -204,7 +204,7 @@ export class BreezService {
       // Step 1: Prepare the receive payment request with correct BOLT11 format
       const prepareRequest = {
         paymentMethod: "bolt11Invoice", // Use correct variant for BOLT11 invoice
-        payerAmountSat: amountSats,     // Must be top-level property
+        amountMsat, // Use amount in millisats for lightning
         description: description || 'Lightning payment'
       };
 
