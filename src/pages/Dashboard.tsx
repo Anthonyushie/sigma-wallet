@@ -15,7 +15,7 @@ const Dashboard: React.FC = () => {
   return (
     <Layout title="SIGMA WALLET">
       <div className="max-w-md mx-auto space-y-6">
-        
+
         {/* Settings Button */}
         <div className="flex justify-end">
           <button
@@ -36,7 +36,6 @@ const Dashboard: React.FC = () => {
             currency={wallet.balance.currency}
             color="electric"
           />
-          
           <BalanceCard
             title="LIGHTNING BALANCE"
             amount={wallet.balance.lightning}
@@ -55,7 +54,6 @@ const Dashboard: React.FC = () => {
           >
             SEND
           </ActionButton>
-          
           <ActionButton
             onClick={() => navigate('/receive')}
             variant="success"
@@ -70,12 +68,16 @@ const Dashboard: React.FC = () => {
         <div className="space-y-4">
           <h2 className="text-xl font-black uppercase">RECENT TRANSACTIONS</h2>
           <div className="space-y-3">
-            {wallet.transactions.map((transaction) => (
-              <TransactionItem 
-                key={transaction.id} 
-                transaction={transaction} 
-              />
-            ))}
+            {wallet.transactions.length === 0 ? (
+              <div className="font-mono text-gray-500 text-center p-4 bg-gray-100 rounded-lg">No transactions yet</div>
+            ) : (
+              wallet.transactions.map((transaction) => (
+                <TransactionItem
+                  key={transaction.id}
+                  transaction={transaction}
+                />
+              ))
+            )}
           </div>
         </div>
       </div>

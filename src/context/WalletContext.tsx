@@ -300,18 +300,32 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   useEffect(() => {
     if (lightningWallet.transactions.length > 0) {
+      // Validate and massage transaction data (from Alby/other WebLN provider)
       const formattedTransactions: Transaction[] = lightningWallet.transactions.map(tx => ({
         id: tx.id,
-        type: tx.type,
-        amount: tx.amount,
-        currency: 'SAT',
-        timestamp: new Date(tx.timestamp),
-        status: tx.status === 'complete' ? 'completed' : tx.status === 'failed' ? 'failed' : 'pending',
+        type: tx.type === "send" ? "send" : "receive",
+        amount: typeof tx.amount === "number" ? tx.amount : 0,
+        currency: "SAT",
+        // Parse ISO date or keep as Date
+        timestamp:
+          typeof tx.timestamp === "string"
+            ? new Date(tx.timestamp)
+            : tx.timestamp instanceof Date
+            ? tx.timestamp
+            : new Date(),
+        status: tx.status === "complete"
+          ? "completed"
+          : tx.status === "failed"
+          ? "failed"
+          : "pending",
         description: tx.description,
         invoice: tx.bolt11
       }));
-      
+
       dispatch({ type: 'UPDATE_TRANSACTIONS', payload: formattedTransactions });
+    } else {
+      // Empty list case: clear transactions
+      dispatch({ type: 'UPDATE_TRANSACTIONS', payload: [] });
     }
   }, [lightningWallet.transactions]);
 
