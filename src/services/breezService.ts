@@ -1,4 +1,3 @@
-
 import init, {
   connect,
   defaultConfig,
@@ -202,11 +201,9 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountSats, amountMsat, description });
 
-      // Step 1: Prepare the receive payment request with correct Liquid Lightning format
+      // Step 1: Prepare the receive payment request with correct BOLT11 format
       const prepareRequest = {
-        paymentMethod: {
-          type: "lightning" as const,
-        },
+        paymentMethod: "bolt11Invoice", // Use bolt11Invoice variant for BOLT11 invoices
         payerAmountSat: amountSats, // Bitcoin payer amount for Liquid Lightning
         description: description || 'Lightning payment'
       };
