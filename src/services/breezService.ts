@@ -1,14 +1,9 @@
-import { 
-  connect, 
+
+import init, {
+  connect,
   defaultConfig,
-  LiquidNetwork,
-  prepareReceivePayment,
-  receivePayment,
-  prepareSendPayment,
-  sendPayment,
-  sync,
-  getInfo,
-  PaymentState
+  PaymentState,
+  SdkEvent
 } from '@breeztech/breez-sdk-liquid/web';
 import * as bip39 from 'bip39';
 
@@ -38,6 +33,7 @@ export class BreezService {
   private static instance: BreezService;
   private sdk: any = null;
   private isInitialized = false;
+  private initializedWasm = false;
 
   static getInstance(): BreezService {
     if (!BreezService.instance) {
@@ -46,16 +42,27 @@ export class BreezService {
     return BreezService.instance;
   }
 
+  // Ensure WASM init runs once before SDK logic
+  private async ensureWasmInit(): Promise<void> {
+    if (!this.initializedWasm) {
+      await init();
+      this.initializedWasm = true;
+    }
+  }
+
   async initialize(mnemonic: string): Promise<void> {
     try {
       if (this.isInitialized && this.sdk) {
         return;
       }
 
+      // Always initialize the WASM first!
+      await this.ensureWasmInit();
+
       console.log('Initializing Breez SDK with proper configuration...');
       
-      // Create config with proper network enum
-      const config = await defaultConfig(LiquidNetwork.MAINNET);
+      // Use "mainnet" string as websocket expects string not enum in Breez SDK
+      const config = await defaultConfig("mainnet");
       config.breezApiKey = BREEZ_CERTIFICATE;
 
       // Convert mnemonic to proper seed using BIP39
@@ -70,11 +77,11 @@ export class BreezService {
       this.isInitialized = true;
       console.log('Breez SDK initialized successfully');
       
-      // Perform initial sync
+      // Perform initial sync (call via SDK instance if possible)
       await this.sync();
     } catch (error) {
       console.error('Failed to initialize Breez SDK:', error);
-      throw new Error(`Breez SDK initialization failed: ${error.message}`);
+      throw new Error(`Breez SDK initialization failed: ${(error as Error).message}`);
     }
   }
 
@@ -83,7 +90,6 @@ export class BreezService {
     if (!bip39.validateMnemonic(mnemonic)) {
       throw new Error('Invalid mnemonic phrase');
     }
-    
     const seedBuffer = bip39.mnemonicToSeedSync(mnemonic);
     return new Uint8Array(seedBuffer.slice(0, 32)); // Take first 32 bytes
   }
@@ -94,12 +100,12 @@ export class BreezService {
     }
 
     try {
-      const walletInfo = await getInfo();
+      const info = await this.sdk.getInfo();
       return {
         isConnected: true,
-        balance: walletInfo.balanceSat || 0,
-        pendingReceive: walletInfo.pendingReceiveSat || 0,
-        pendingSend: walletInfo.pendingSendSat || 0
+        balance: info.balanceSat || 0,
+        pendingReceive: info.pendingReceiveSat || 0,
+        pendingSend: info.pendingSendSat || 0
       };
     } catch (error) {
       console.error('Failed to get wallet info:', error);
@@ -116,15 +122,10 @@ export class BreezService {
       // Convert sats to millisats
       const amountMsat = amountSats * 1000;
 
-      // Prepare receive payment
-      const prepareResponse = await prepareReceivePayment({
+      // Use receivePayment directly (per SDK docs)
+      const invoice = await this.sdk.receivePayment({
         amountMsat,
         description: description || 'Lightning payment'
-      });
-
-      // Execute receive payment
-      const invoice = await receivePayment({
-        prepareResponse
       });
 
       return {
@@ -144,19 +145,13 @@ export class BreezService {
     }
 
     try {
-      // Validate Lightning invoice format
       if (!this.isValidLightningInvoice(bolt11)) {
         throw new Error('Invalid Lightning invoice format');
       }
 
-      // Prepare send payment
-      const prepareResponse = await prepareSendPayment({
+      // Use sendPayment directly (per SDK docs)
+      const payment = await this.sdk.sendPayment({
         bolt11
-      });
-
-      // Execute send payment
-      const payment = await sendPayment({
-        prepareResponse
       });
 
       return {
@@ -174,9 +169,9 @@ export class BreezService {
     // Check if it's a valid BOLT11 invoice format
     const lowerInvoice = invoice.toLowerCase();
     return (
-      lowerInvoice.startsWith('lnbc') || // Bitcoin mainnet
-      lowerInvoice.startsWith('lntb') || // Bitcoin testnet
-      lowerInvoice.startsWith('lnbcrt') // Bitcoin regtest
+      lowerInvoice.startsWith('lnbc') ||
+      lowerInvoice.startsWith('lntb') ||
+      lowerInvoice.startsWith('lnbcrt')
     ) && invoice.length > 20;
   }
 
@@ -186,7 +181,7 @@ export class BreezService {
     }
 
     try {
-      await sync();
+      await this.sdk.sync();
       console.log('Wallet synced successfully');
     } catch (error) {
       console.error('Failed to sync:', error);
@@ -213,3 +208,4 @@ export class BreezService {
 }
 
 export const breezService = BreezService.getInstance();
+
