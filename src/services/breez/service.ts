@@ -1,4 +1,3 @@
-
 import init, {
   connect,
   defaultConfig
@@ -174,16 +173,15 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountSats, amountMsat, description });
 
-      // Create the proper request structure for bolt11Invoice payment method
+      // For bolt11Invoice, we need to structure this as a Lightning invoice request
       const prepareRequest = {
         paymentMethod: {
-          type: "bolt11Invoice",
+          type: "lightning",
           invoice: {
             amountMsat: amountMsat,
             description: description || 'Lightning payment'
           }
-        },
-        payerAmountSat: amountSats // This is the key field that was missing
+        }
       };
 
       console.log('Calling SDK prepareReceivePayment with:', prepareRequest);
