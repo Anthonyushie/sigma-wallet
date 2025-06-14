@@ -28,7 +28,7 @@ interface WalletContextType {
   resetSendFlow: () => void;
   
   // Receive actions
-  generateInvoice: (amount: number) => Promise<void>;
+  generateInvoice: (amount: number, description?: string) => Promise<void>;
   resetReceiveFlow: () => void;
   
   // Lightning actions
@@ -277,9 +277,9 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   
   const resetSendFlow = () => dispatch({ type: 'RESET_SEND_FLOW' });
   
-  const generateInvoice = async (amount: number) => {
+  const generateInvoice = async (amount: number, description?: string) => {
     try {
-      const invoice = await lightningWallet.createInvoice(amount, 'Lightning payment');
+      const invoice = await lightningWallet.createInvoice(amount, description || 'Lightning payment');
       dispatch({ 
         type: 'GENERATE_INVOICE', 
         payload: amount,
