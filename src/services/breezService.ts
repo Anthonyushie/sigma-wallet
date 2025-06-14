@@ -1,4 +1,3 @@
-
 import { 
   connect, 
   defaultConfig
@@ -18,7 +17,6 @@ export class BreezService {
   private static instance: BreezService;
   private sdk: any = null;
   private isInitialized = false;
-  private eventListener: ((event: any) => void) | null = null;
 
   static getInstance(): BreezService {
     if (!BreezService.instance) {
@@ -38,22 +36,14 @@ export class BreezService {
       // Create config with certificate - using mainnet string instead of enum
       const config = await defaultConfig('mainnet');
       config.breezApiKey = BREEZ_CERTIFICATE;
-      
-      // Set up event listener
-      if (!this.eventListener) {
-        this.eventListener = (event: any) => {
-          console.log('Breez event received:', event);
-        };
-      }
 
       // Convert mnemonic to seed array
       const seedArray = this.mnemonicToSeedArray(mnemonic);
 
-      // Connect to Breez SDK
+      // Connect to Breez SDK - removed eventListener as it's not supported in ConnectRequest
       this.sdk = await connect({
         config,
-        seed: seedArray,
-        eventListener: this.eventListener
+        seed: seedArray
       });
       
       this.isInitialized = true;
@@ -205,7 +195,6 @@ export class BreezService {
     }
     this.sdk = null;
     this.isInitialized = false;
-    this.eventListener = null;
   }
 
   isReady(): boolean {
