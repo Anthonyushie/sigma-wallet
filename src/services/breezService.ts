@@ -202,26 +202,27 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountMsat, description });
 
-      // Use the correct method name for Breez SDK Liquid
+      // Step 1: Prepare the receive payment request
       const prepareRequest = {
         amountMsat,
         description: description || 'Lightning payment'
       };
 
-      console.log('Calling SDK receivePayment with:', prepareRequest);
+      console.log('Calling SDK prepareReceivePayment with:', prepareRequest);
 
-      const invoiceRawResponse = await this.sdk.receivePayment(prepareRequest);
-      console.log('SDK receivePayment RAW response:', invoiceRawResponse);
+      // Use prepareReceivePayment first
+      const prepareResponse = await this.sdk.prepareReceivePayment(prepareRequest);
+      console.log('SDK prepareReceivePayment response:', prepareResponse);
 
-      // Fix: Breez SDK sometimes returns { prepareResponse: { ...invoice fields... } }
-      // Or just the invoice itself. Try both.
-      let invoice;
-      if (invoiceRawResponse.prepareResponse) {
-        console.log("Found prepareResponse in SDK response");
-        invoice = invoiceRawResponse.prepareResponse;
-      } else {
-        invoice = invoiceRawResponse;
-      }
+      // Step 2: Execute the receive payment with the prepared response
+      console.log('Calling SDK receivePayment with prepareResponse');
+      const invoiceResponse = await this.sdk.receivePayment({
+        prepareResponse: prepareResponse
+      });
+      console.log('SDK receivePayment final response:', invoiceResponse);
+
+      // Extract the invoice data
+      const invoice = invoiceResponse;
       console.log('Parsed invoice in createInvoice:', invoice);
 
       if (!invoice.bolt11 || !invoice.paymentHash) {
