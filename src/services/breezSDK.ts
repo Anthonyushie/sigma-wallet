@@ -1,8 +1,8 @@
+import * as BreezSDK from '@breeztech/breez-sdk-liquid';
 import { 
   initSDK,
   defaultConfig,
   connect,
-  LiquidNetwork,
   PaymentState,
   type Config,
   type PrepareReceivePaymentRequest,
@@ -71,7 +71,7 @@ export class BreezSDKService {
 
       // Create configuration for mainnet
       this.config = defaultConfig(
-        network === 'mainnet' ? LiquidNetwork.MAINNET : LiquidNetwork.TESTNET,
+        network === 'mainnet' ? BreezSDK.LiquidNetwork.MAINNET : BreezSDK.LiquidNetwork.TESTNET,
         apiKey
       );
       
