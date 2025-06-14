@@ -127,7 +127,7 @@ export class BreezService {
       console.error('Failed to initialize Breez SDK:', error);
       await this.cleanup();
       
-      // Categorize errors for better handling
+      // Enhanced error categorization
       if (error instanceof Error) {
         if (error.message.includes('BREEZ_AUTH_MISSING')) {
           throw error;
@@ -135,6 +135,12 @@ export class BreezService {
           throw error;
         } else if (error.message.includes('timeout')) {
           throw new Error(`TIMEOUT_ERROR: Breez SDK connection timed out: ${error.message}`);
+        } else if (error.message.includes('memory access out of bounds')) {
+          throw new Error(`MEMORY_ERROR: WASM memory access error: ${error.message}`);
+        } else if (error.message.includes('prepareResponse') || error.message.includes('missing field')) {
+          throw new Error(`SERIALIZATION_ERROR: Breez SDK data format error: ${error.message}`);
+        } else if (error.message.includes('unreachable')) {
+          throw new Error(`WASM_ERROR: WASM execution error: ${error.message}`);
         } else {
           throw new Error(`BREEZ_SDK_ERROR: Breez SDK initialization failed: ${error.message}`);
         }
@@ -169,6 +175,11 @@ export class BreezService {
       };
     } catch (error) {
       console.error('Failed to get wallet info:', error);
+      
+      // Handle specific serialization errors
+      if (error instanceof Error && error.message.includes('prepareResponse')) {
+        throw new Error('SERIALIZATION_ERROR: Failed to parse wallet info response');
+      }
       throw error;
     }
   }
@@ -193,6 +204,11 @@ export class BreezService {
       };
     } catch (error) {
       console.error('Failed to create invoice:', error);
+      
+      // Handle specific serialization errors
+      if (error instanceof Error && error.message.includes('prepareResponse')) {
+        throw new Error('SERIALIZATION_ERROR: Failed to parse invoice response');
+      }
       throw error;
     }
   }
@@ -218,6 +234,11 @@ export class BreezService {
       };
     } catch (error) {
       console.error('Failed to pay invoice:', error);
+      
+      // Handle specific serialization errors
+      if (error instanceof Error && error.message.includes('prepareResponse')) {
+        throw new Error('SERIALIZATION_ERROR: Failed to parse payment response');
+      }
       throw error;
     }
   }

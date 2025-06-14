@@ -52,8 +52,14 @@ export const useLightningWallet = () => {
       } else if (error.message.includes('TIMEOUT_ERROR')) {
         console.log('Breez connection timed out, using mock mode');
         return breezError;
-      } else if (error.message.includes('memory access out of bounds')) {
+      } else if (error.message.includes('MEMORY_ERROR') || error.message.includes('memory access out of bounds')) {
         console.log('Breez WASM memory error, using mock mode');
+        return breezError;
+      } else if (error.message.includes('SERIALIZATION_ERROR') || error.message.includes('prepareResponse')) {
+        console.log('Breez SDK serialization error, using mock mode');
+        return breezError;
+      } else if (error.message.includes('WASM_ERROR') || error.message.includes('unreachable')) {
+        console.log('Breez WASM execution error, using mock mode');
         return breezError;
       }
     }
@@ -142,7 +148,9 @@ export const useLightningWallet = () => {
             // Only show error if it's not an expected fallback case
             if (!error.message.includes('authentication') && 
                 !error.message.includes('timeout') && 
-                !error.message.includes('memory access')) {
+                !error.message.includes('memory access') &&
+                !error.message.includes('serialization') &&
+                !error.message.includes('WASM')) {
               console.error('Unexpected Breez error:', breezError);
             }
             
