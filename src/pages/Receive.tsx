@@ -39,18 +39,18 @@ const Receive: React.FC = () => {
   const renderAmountScreen = () => (
     <div className="space-y-6">
       <div className="brutal-card">
-        <h2 className="text-2xl font-black mb-6">REQUEST PAYMENT</h2>
+        <h2 className="text-2xl font-black mb-6">GET THAT BAG 💸</h2>
         
         <div className="space-y-4">
           <div>
             <label className="block font-black uppercase text-sm mb-2">
-              AMOUNT (SATS)
+              DROP THE AMOUNT (SATS)
             </label>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="21000"
+              placeholder="How many SATS you wanna catch?"
               className="brutal-input w-full text-2xl"
               disabled={isLightningLoading}
             />
@@ -72,7 +72,7 @@ const Receive: React.FC = () => {
           className="w-full"
           disabled={isLightningLoading}
         >
-          CANCEL
+          NEVERMIND
         </ActionButton>
         
         <ActionButton
@@ -82,7 +82,7 @@ const Receive: React.FC = () => {
           className="w-full"
           disabled={!amount || isLightningLoading}
         >
-          {isLightningLoading ? 'GENERATING...' : 'GENERATE'}
+          {isLightningLoading ? "COOKING..." : "PULL UP INVOICE"}
         </ActionButton>
       </div>
     </div>
@@ -110,12 +110,12 @@ const Receive: React.FC = () => {
       {/* Content */}
       <div className="relative z-10">
         <div className="brutal-card bg-electric-orange text-black border-4 border-black shadow-brutal-lg">
-          <h2 className="text-3xl font-black mb-4 animate-bounce">⚡ BOSS LEVEL INVOICE! ⚡</h2>
+          <h2 className="text-3xl font-black mb-4 animate-bounce">⚡ YOU’RE HIM FOR REAL ⚡</h2>
           <p className="font-mono text-xl font-black">
-            PREPARE FOR LEGENDARY PAYMENT
+            GET PAID, LEGEND 😎
           </p>
           <p className="font-mono text-lg mt-2">
-            Amount: {receiveFlow.amount} SATS 👑
+            Amount: {receiveFlow.amount} SATS 🚀
           </p>
         </div>
 
@@ -141,13 +141,13 @@ const Receive: React.FC = () => {
             className="w-full flex items-center justify-center space-x-2 font-black text-lg animate-pulse"
           >
             <Copy size={20} />
-            <span>💪 COPY BOSS INVOICE 💪</span>
+            <span>📋 COPY THAT SAUCE</span>
           </ActionButton>
         </div>
 
         {/* Invoice Details */}
         <div className="brutal-card bg-electric-purple text-white border-4 border-black shadow-brutal">
-          <h3 className="font-black uppercase text-sm mb-2">🎯 BOSS INVOICE DETAILS 🎯</h3>
+          <h3 className="font-black uppercase text-sm mb-2">YOUR SAUCE (COPY &amp; PASTE)</h3>
           <div className="bg-black p-3 border-2 border-electric-lime font-mono text-xs break-all text-electric-lime">
             {receiveFlow.invoice}
           </div>
@@ -162,7 +162,7 @@ const Receive: React.FC = () => {
           size="lg"
           className="w-full font-black text-xl"
         >
-          BACK TO COMMAND CENTER
+          BACK TO STACK
         </ActionButton>
       </div>
 

@@ -31,25 +31,25 @@ const Send: React.FC = () => {
   const renderInputScreen = () => (
     <div className="space-y-6">
       <div className="brutal-card">
-        <h2 className="text-2xl font-black mb-6">SEND PAYMENT</h2>
+        <h2 className="text-2xl font-black mb-6">SLIDE SOME COIN</h2>
         
         <div className="space-y-4">
           <div>
             <label className="block font-black uppercase text-sm mb-2">
-              RECIPIENT
+              WHO U SENDIN’ TO?
             </label>
             <input
               type="text"
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
-              placeholder="Lightning invoice or Bitcoin address"
+              placeholder="Drop that lightning invoice or BTC addy"
               className="brutal-input w-full"
             />
           </div>
           
           <div>
             <label className="block font-black uppercase text-sm mb-2">
-              AMOUNT
+              HOW MUCH WE FLEXIN’?
             </label>
             <input
               type="number"
@@ -69,7 +69,7 @@ const Send: React.FC = () => {
           size="lg"
           className="w-full"
         >
-          CANCEL
+          NAH, GO BACK
         </ActionButton>
         
         <ActionButton
@@ -79,7 +79,7 @@ const Send: React.FC = () => {
           className="w-full"
           disabled={!recipient || !amount}
         >
-          CONTINUE
+          NEXT UP
         </ActionButton>
       </div>
     </div>
@@ -88,9 +88,9 @@ const Send: React.FC = () => {
   const renderConfirmScreen = () => (
     <div className="space-y-6">
       <div className="brutal-card bg-electric-orange text-black">
-        <h2 className="text-2xl font-black mb-4">⚠️ CONFIRM PAYMENT</h2>
+        <h2 className="text-2xl font-black mb-4">⚡️ DOUBLE CHECK, FAM</h2>
         <p className="font-mono">
-          Review the details carefully. This action cannot be undone!
+          Peep the deets. Once it’s sent, it’s BUSSIN’ – no cap!
         </p>
       </div>
 
@@ -107,7 +107,7 @@ const Send: React.FC = () => {
           
           <div>
             <label className="block font-black uppercase text-sm mb-1">
-              AMOUNT
+              GONNA FLEX
             </label>
             <p className="font-mono text-3xl font-black">
               {sendFlow.amount} BTC
@@ -132,7 +132,7 @@ const Send: React.FC = () => {
           size="lg"
           className="w-full"
         >
-          SEND NOW
+          YEET IT
         </ActionButton>
       </div>
     </div>
@@ -153,23 +153,23 @@ const Send: React.FC = () => {
       {/* Success Content */}
       <div className="relative z-10">
         <div className="brutal-card bg-electric-lime text-black text-center border-4 border-black shadow-brutal-lg">
-          <h2 className="text-4xl font-black mb-4 animate-bounce">✅ GIGACHAD PAYMENT SENT!</h2>
+          <h2 className="text-4xl font-black mb-4 animate-bounce">✅ COIN SENT, YOU’RE H1M</h2>
           <p className="font-mono text-xl font-black">
-            ABSOLUTE UNIT OF A TRANSACTION
+            ABSOLUTE DUB 🏆
           </p>
           <p className="font-mono text-lg mt-2">
-            CHAD LEVEL: MAXIMUM
+            YOUR BAG JUST SHRANK A LITTLE 😅
           </p>
         </div>
 
         <div className="brutal-card bg-electric-blue text-black border-4 border-black shadow-brutal">
           <div className="space-y-2">
-            <p className="font-black uppercase text-sm">GIGACHAD AMOUNT SENT</p>
+            <p className="font-black uppercase text-sm">AMOUNT DROPPED</p>
             <p className="font-mono text-3xl font-black animate-pulse">
               {sendFlow.amount} BTC
             </p>
             <p className="font-mono text-sm">
-              💪 TRANSACTION STATUS: ALPHA 💪
+              ✅ ALL SET, GANG
             </p>
           </div>
         </div>
@@ -183,7 +183,7 @@ const Send: React.FC = () => {
           size="lg"
           className="w-full font-black text-xl animate-pulse"
         >
-          BACK TO CHAD DASHBOARD
+          BACK TO STACK
         </ActionButton>
       </div>
 
