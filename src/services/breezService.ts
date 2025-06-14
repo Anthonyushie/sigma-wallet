@@ -201,10 +201,11 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountSats, amountMsat, description });
 
-      // Step 1: Prepare the receive payment request with correct BOLT11 format
+      // Step 1: Prepare the receive payment request, including both msat and sat amounts
       const prepareRequest = {
-        paymentMethod: "bolt11Invoice", // Use correct variant for BOLT11 invoice
-        amountMsat, // Use amount in millisats for lightning
+        paymentMethod: "bolt11Invoice",
+        amountMsat,
+        payerAmountSat: amountSats, // Adding this as it seems to be required
         description: description || 'Lightning payment'
       };
 
