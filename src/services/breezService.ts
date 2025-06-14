@@ -1,3 +1,4 @@
+
 import init, {
   connect,
   defaultConfig,
@@ -166,7 +167,10 @@ export class BreezService {
     }
 
     try {
+      console.log('Calling SDK getInfo...');
       const info = await this.sdk.getInfo();
+      console.log('SDK getInfo response:', info);
+      
       return {
         isConnected: true,
         balance: info.balanceSat || 0,
@@ -175,6 +179,10 @@ export class BreezService {
       };
     } catch (error) {
       console.error('Failed to get wallet info:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
       // Handle specific serialization errors
       if (error instanceof Error && error.message.includes('prepareResponse')) {
@@ -192,10 +200,17 @@ export class BreezService {
     try {
       const amountMsat = amountSats * 1000;
 
-      const invoice = await this.sdk.receivePayment({
+      console.log('Creating invoice with params:', { amountMsat, description });
+
+      // Use the correct method name for Breez SDK Liquid
+      const prepareRequest = {
         amountMsat,
         description: description || 'Lightning payment'
-      });
+      };
+
+      console.log('Calling SDK receivePayment with:', prepareRequest);
+      const invoice = await this.sdk.receivePayment(prepareRequest);
+      console.log('SDK receivePayment response:', invoice);
 
       return {
         bolt11: invoice.bolt11,
@@ -204,6 +219,10 @@ export class BreezService {
       };
     } catch (error) {
       console.error('Failed to create invoice:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
       // Handle specific serialization errors
       if (error instanceof Error && error.message.includes('prepareResponse')) {
@@ -223,9 +242,14 @@ export class BreezService {
         throw new Error('Invalid Lightning invoice format');
       }
 
-      const payment = await this.sdk.sendPayment({
-        bolt11
-      });
+      console.log('Paying invoice:', bolt11);
+
+      // First prepare the payment
+      const prepareRequest = { bolt11 };
+      console.log('Calling SDK sendPayment with:', prepareRequest);
+      
+      const payment = await this.sdk.sendPayment(prepareRequest);
+      console.log('SDK sendPayment response:', payment);
 
       return {
         paymentHash: payment.paymentHash,
@@ -234,6 +258,10 @@ export class BreezService {
       };
     } catch (error) {
       console.error('Failed to pay invoice:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
       // Handle specific serialization errors
       if (error instanceof Error && error.message.includes('prepareResponse')) {
@@ -258,6 +286,7 @@ export class BreezService {
     }
 
     try {
+      console.log('Syncing wallet...');
       await this.sdk.sync();
       console.log('Wallet synced successfully');
     } catch (error) {
