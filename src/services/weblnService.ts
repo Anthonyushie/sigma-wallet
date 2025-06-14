@@ -38,14 +38,14 @@ export interface WebLNTransaction {
 
 export class WebLNService {
   private static provider: any = null;
-  private static isConnected = false;
+  private static connected = false;
 
   static async connect(): Promise<void> {
     try {
       console.log('Connecting to WebLN provider...');
       this.provider = await requestProvider();
       await this.provider.enable();
-      this.isConnected = true;
+      this.connected = true;
       console.log('Successfully connected to WebLN provider');
     } catch (error) {
       console.error('Failed to connect to WebLN provider:', error);
@@ -54,7 +54,7 @@ export class WebLNService {
   }
 
   private static ensureConnected(): void {
-    if (!this.provider || !this.isConnected) {
+    if (!this.provider || !this.connected) {
       throw new Error('WebLN provider not connected. Call connect() first.');
     }
   }
@@ -156,7 +156,7 @@ export class WebLNService {
   static async disconnect(): Promise<void> {
     if (this.provider) {
       this.provider = null;
-      this.isConnected = false;
+      this.connected = false;
       console.log('Disconnected from WebLN provider');
     }
   }
@@ -167,6 +167,6 @@ export class WebLNService {
   }
 
   static isConnected(): boolean {
-    return this.isConnected && this.provider !== null;
+    return this.connected && this.provider !== null;
   }
 }
