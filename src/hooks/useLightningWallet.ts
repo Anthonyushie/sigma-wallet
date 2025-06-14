@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
 import { WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
 import { BreezErrorHandler, BreezError } from '../utils/errorHandling';
-import { breezService, BreezWalletState } from '../services/breezService';
+import { breezService, BreezWalletState, BreezInvoice, BreezPayment } from '../services/breezService';
 
 export interface LightningWalletState {
   isInitialized: boolean;
@@ -181,7 +181,7 @@ export const useLightningWallet = () => {
         throw new Error('Lightning wallet not ready');
       }
 
-      const response = await breezService.createInvoice(amount, description);
+      const response: BreezInvoice = await breezService.createInvoice(amount, description);
       
       const invoice: WebLNInvoice = {
         id: response.paymentHash,
@@ -212,12 +212,12 @@ export const useLightningWallet = () => {
         throw new Error('Lightning wallet not ready');
       }
 
-      const response = await breezService.payInvoice(bolt11);
+      const response: BreezPayment = await breezService.payInvoice(bolt11);
       
       const payment: WebLNPayment = {
         id: response.paymentHash,
         bolt11,
-        amount: 0, // Amount will be extracted from bolt11
+        amount: Math.floor(response.amountMsat / 1000), // Convert msat to sat
         description: 'Lightning payment',
         status: response.status === 'complete' ? 'complete' : 'pending',
         createdAt: new Date().toISOString(),

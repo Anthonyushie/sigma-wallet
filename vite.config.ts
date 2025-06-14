@@ -11,6 +11,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
+    },
   },
   plugins: [
     react(),
@@ -48,7 +52,7 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\./,
@@ -78,7 +82,7 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     exclude: ['tiny-secp256k1', '@breeztech/breez-sdk-liquid'],
-    include: ['buffer']
+    include: ['buffer', 'bip39']
   },
   build: {
     target: 'esnext',
@@ -91,5 +95,6 @@ export default defineConfig(({ mode }) => ({
   },
   worker: {
     format: 'es'
-  }
+  },
+  assetsInclude: ['**/*.wasm']
 }));

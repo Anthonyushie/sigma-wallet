@@ -1,13 +1,35 @@
+
 import { 
   connect, 
-  defaultConfig
+  defaultConfig,
+  LiquidNetwork,
+  prepareReceivePayment,
+  receivePayment,
+  prepareSendPayment,
+  sendPayment,
+  sync,
+  getInfo,
+  PaymentState
 } from '@breeztech/breez-sdk-liquid';
+import * as bip39 from 'bip39';
 
 export interface BreezWalletState {
   isConnected: boolean;
   balance: number;
   pendingReceive: number;
   pendingSend: number;
+}
+
+export interface BreezInvoice {
+  bolt11: string;
+  paymentHash: string;
+  amountMsat: number;
+}
+
+export interface BreezPayment {
+  paymentHash: string;
+  status: PaymentState;
+  amountMsat: number;
 }
 
 // Certificate for Breez authentication
@@ -31,41 +53,40 @@ export class BreezService {
         return;
       }
 
-      console.log('Initializing Breez SDK with certificate...');
+      console.log('Initializing Breez SDK with proper configuration...');
       
-      // Create config with certificate - using mainnet string instead of enum
-      const config = await defaultConfig('mainnet');
+      // Create config with proper network enum
+      const config = await defaultConfig(LiquidNetwork.MAINNET);
       config.breezApiKey = BREEZ_CERTIFICATE;
 
-      // Convert mnemonic to seed array
-      const seedArray = this.mnemonicToSeedArray(mnemonic);
+      // Convert mnemonic to proper seed using BIP39
+      const seed = this.mnemonicToSeed(mnemonic);
 
-      // Connect to Breez SDK - removed eventListener as it's not supported in ConnectRequest
+      // Connect to Breez SDK
       this.sdk = await connect({
         config,
-        seed: seedArray
+        seed
       });
       
       this.isInitialized = true;
       console.log('Breez SDK initialized successfully');
+      
+      // Perform initial sync
+      await this.sync();
     } catch (error) {
       console.error('Failed to initialize Breez SDK:', error);
-      // For development, fall back to mock mode
-      this.sdk = { connected: true, mock: true };
-      this.isInitialized = true;
-      console.warn('Using mock Breez SDK due to initialization error');
+      throw new Error(`Breez SDK initialization failed: ${error.message}`);
     }
   }
 
-  private mnemonicToSeedArray(mnemonic: string): number[] {
-    // Simple seed generation - convert to number array for SDK compatibility
-    const encoder = new TextEncoder();
-    const data = encoder.encode(mnemonic);
-    const seed: number[] = new Array(32).fill(0);
-    for (let i = 0; i < Math.min(data.length, 32); i++) {
-      seed[i] = data[i];
+  private mnemonicToSeed(mnemonic: string): Uint8Array {
+    // Use BIP39 to convert mnemonic to seed
+    if (!bip39.validateMnemonic(mnemonic)) {
+      throw new Error('Invalid mnemonic phrase');
     }
-    return seed;
+    
+    const seedBuffer = bip39.mnemonicToSeedSync(mnemonic);
+    return new Uint8Array(seedBuffer.slice(0, 32)); // Take first 32 bytes
   }
 
   async getWalletInfo(): Promise<BreezWalletState> {
@@ -74,18 +95,7 @@ export class BreezService {
     }
 
     try {
-      if (this.sdk.mock) {
-        // Mock data when SDK fails to initialize
-        return {
-          isConnected: true,
-          balance: 25000,
-          pendingReceive: 0,
-          pendingSend: 0
-        };
-      }
-
-      // Real SDK calls
-      const walletInfo = await this.sdk.getInfo();
+      const walletInfo = await getInfo();
       return {
         isConnected: true,
         balance: walletInfo.balanceSat || 0,
@@ -98,34 +108,30 @@ export class BreezService {
     }
   }
 
-  async createInvoice(amountSats: number, description?: string): Promise<{ bolt11: string; paymentHash: string }> {
+  async createInvoice(amountSats: number, description?: string): Promise<BreezInvoice> {
     if (!this.sdk) {
       throw new Error('Breez SDK not initialized');
     }
 
     try {
-      if (this.sdk.mock) {
-        // Mock invoice generation
-        const mockInvoice = `lntb${amountSats}u1p0example...`;
-        const mockHash = 'mock-payment-hash-' + Date.now();
-        
-        return {
-          bolt11: mockInvoice,
-          paymentHash: mockHash
-        };
-      }
+      // Convert sats to millisats
+      const amountMsat = amountSats * 1000;
 
-      // Real SDK invoice creation
-      const invoiceRequest = {
-        amountSat: amountSats,
+      // Prepare receive payment
+      const prepareResponse = await prepareReceivePayment({
+        amountMsat,
         description: description || 'Lightning payment'
-      };
-      
-      const invoice = await this.sdk.receivePayment(invoiceRequest);
-      
+      });
+
+      // Execute receive payment
+      const invoice = await receivePayment({
+        prepareResponse
+      });
+
       return {
         bolt11: invoice.bolt11,
-        paymentHash: invoice.paymentHash
+        paymentHash: invoice.paymentHash,
+        amountMsat
       };
     } catch (error) {
       console.error('Failed to create invoice:', error);
@@ -133,37 +139,46 @@ export class BreezService {
     }
   }
 
-  async payInvoice(bolt11: string): Promise<{ paymentHash: string; status: string }> {
+  async payInvoice(bolt11: string): Promise<BreezPayment> {
     if (!this.sdk) {
       throw new Error('Breez SDK not initialized');
     }
 
     try {
-      if (this.sdk.mock) {
-        // Mock payment
-        const mockHash = 'mock-payment-hash-' + Date.now();
-        
-        return {
-          paymentHash: mockHash,
-          status: 'complete'
-        };
+      // Validate Lightning invoice format
+      if (!this.isValidLightningInvoice(bolt11)) {
+        throw new Error('Invalid Lightning invoice format');
       }
 
-      // Real SDK payment
-      const paymentRequest = {
-        bolt11: bolt11
-      };
-      
-      const payment = await this.sdk.sendPayment(paymentRequest);
-      
+      // Prepare send payment
+      const prepareResponse = await prepareSendPayment({
+        bolt11
+      });
+
+      // Execute send payment
+      const payment = await sendPayment({
+        prepareResponse
+      });
+
       return {
         paymentHash: payment.paymentHash,
-        status: payment.status
+        status: payment.status,
+        amountMsat: payment.amountMsat
       };
     } catch (error) {
       console.error('Failed to pay invoice:', error);
       throw error;
     }
+  }
+
+  private isValidLightningInvoice(invoice: string): boolean {
+    // Check if it's a valid BOLT11 invoice format
+    const lowerInvoice = invoice.toLowerCase();
+    return (
+      lowerInvoice.startsWith('lnbc') || // Bitcoin mainnet
+      lowerInvoice.startsWith('lntb') || // Bitcoin testnet
+      lowerInvoice.startsWith('lnbcrt') // Bitcoin regtest
+    ) && invoice.length > 20;
   }
 
   async sync(): Promise<void> {
@@ -172,12 +187,7 @@ export class BreezService {
     }
 
     try {
-      if (this.sdk.mock) {
-        console.log('Mock sync completed');
-        return;
-      }
-
-      await this.sdk.sync();
+      await sync();
       console.log('Wallet synced successfully');
     } catch (error) {
       console.error('Failed to sync:', error);
@@ -186,9 +196,10 @@ export class BreezService {
   }
 
   async disconnect(): Promise<void> {
-    if (this.sdk && !this.sdk.mock) {
+    if (this.sdk) {
       try {
-        await this.sdk.disconnect();
+        // Breez SDK will handle cleanup automatically
+        console.log('Disconnecting from Breez SDK');
       } catch (error) {
         console.error('Error disconnecting:', error);
       }

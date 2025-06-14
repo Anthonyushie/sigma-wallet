@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
+import { LightningProtocolHandler } from '../utils/protocolHandler';
 import Layout from '../components/Layout';
 import ActionButton from '../components/ActionButton';
 import QRCodeDisplay from '../components/QRCodeDisplay';
@@ -10,11 +11,16 @@ const Receive: React.FC = () => {
   const navigate = useNavigate();
   const { receiveFlow, generateInvoice, resetReceiveFlow, isLightningLoading, lightningError } = useWallet();
   const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
 
   const handleGenerateInvoice = async () => {
     if (amount) {
       try {
-        await generateInvoice(parseFloat(amount));
+        const amountSats = parseInt(amount);
+        if (amountSats <= 0) {
+          throw new Error('Amount must be greater than 0');
+        }
+        await generateInvoice(amountSats, description || undefined);
       } catch (error) {
         console.error('Failed to generate invoice:', error);
       }
@@ -23,8 +29,25 @@ const Receive: React.FC = () => {
 
   const handleCopyInvoice = async () => {
     if (receiveFlow.invoice) {
-      await navigator.clipboard.writeText(receiveFlow.invoice);
-      // You could add a toast notification here
+      try {
+        await navigator.clipboard.writeText(receiveFlow.invoice);
+        // You could add a toast notification here
+        console.log('Invoice copied to clipboard');
+      } catch (error) {
+        console.error('Failed to copy to clipboard:', error);
+      }
+    }
+  };
+
+  const handleCopyLightningUri = async () => {
+    if (receiveFlow.invoice) {
+      try {
+        const lightningUri = LightningProtocolHandler.formatLightningUri(receiveFlow.invoice);
+        await navigator.clipboard.writeText(lightningUri);
+        console.log('Lightning URI copied to clipboard');
+      } catch (error) {
+        console.error('Failed to copy Lightning URI:', error);
+      }
     }
   };
 
@@ -44,7 +67,7 @@ const Receive: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block font-black uppercase text-sm mb-2">
-              DROP THE AMOUNT (SATS)
+              AMOUNT (SATS)
             </label>
             <input
               type="number"
@@ -53,6 +76,25 @@ const Receive: React.FC = () => {
               placeholder="How many SATS you wanna catch?"
               className="brutal-input w-full text-2xl"
               disabled={isLightningLoading}
+              min="1"
+            />
+            <p className="text-sm text-gray-600 mt-1 font-mono">
+              Minimum: 1 sat
+            </p>
+          </div>
+
+          <div>
+            <label className="block font-black uppercase text-sm mb-2">
+              DESCRIPTION (OPTIONAL)
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What's this payment for?"
+              className="brutal-input w-full"
+              disabled={isLightningLoading}
+              maxLength={300}
             />
           </div>
           
@@ -80,7 +122,7 @@ const Receive: React.FC = () => {
           variant="success"
           size="lg"
           className="w-full"
-          disabled={!amount || isLightningLoading}
+          disabled={!amount || parseInt(amount) <= 0 || isLightningLoading}
         >
           {isLightningLoading ? "COOKING..." : "PULL UP INVOICE"}
         </ActionButton>
@@ -110,13 +152,18 @@ const Receive: React.FC = () => {
       {/* Content */}
       <div className="relative z-10">
         <div className="brutal-card bg-electric-orange text-black border-4 border-black shadow-brutal-lg">
-          <h2 className="text-3xl font-black mb-4 animate-bounce">⚡ YOU’RE HIM FOR REAL ⚡</h2>
+          <h2 className="text-3xl font-black mb-4 animate-bounce">⚡ YOU'RE HIM FOR REAL ⚡</h2>
           <p className="font-mono text-xl font-black">
             GET PAID, LEGEND 😎
           </p>
           <p className="font-mono text-lg mt-2">
             Amount: {receiveFlow.amount} SATS 🚀
           </p>
+          {description && (
+            <p className="font-mono text-sm mt-1 text-gray-800">
+              "{description}"
+            </p>
+          )}
         </div>
 
         {/* QR Code with epic styling */}
@@ -133,15 +180,25 @@ const Receive: React.FC = () => {
           </div>
         )}
           
-        <div className="brutal-card bg-electric-blue text-black border-4 border-black shadow-brutal">
+        <div className="brutal-card bg-electric-blue text-black border-4 border-black shadow-brutal space-y-2">
           <ActionButton
             onClick={handleCopyInvoice}
             variant="primary"
             size="md"
-            className="w-full flex items-center justify-center space-x-2 font-black text-lg animate-pulse"
+            className="w-full flex items-center justify-center space-x-2 font-black text-lg"
           >
             <Copy size={20} />
-            <span>📋 COPY THAT SAUCE</span>
+            <span>📋 COPY INVOICE</span>
+          </ActionButton>
+          
+          <ActionButton
+            onClick={handleCopyLightningUri}
+            variant="secondary"
+            size="md"
+            className="w-full flex items-center justify-center space-x-2 font-black text-sm"
+          >
+            <Copy size={16} />
+            <span>⚡ COPY LIGHTNING URI</span>
           </ActionButton>
         </div>
 
