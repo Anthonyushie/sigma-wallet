@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { WalletState, Transaction, OnboardingStep, SendFlowState, ReceiveFlowState } from '../types/wallet';
 import { useLightningWallet } from '../hooks/useLightningWallet';
@@ -41,8 +42,8 @@ const initialWalletState: WalletState = {
   hasBackup: false,
   balance: {
     bitcoin: 0.00234567,
-    lightning: 25000,
-    fiat: 1250.32,
+    lightning: 0,
+    fiat: 0,
     currency: 'USD'
   },
   transactions: [
@@ -324,16 +325,21 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     await lightningWallet.retryLastOperation();
   };
 
-  // Use mock data instead of WebLN data
+  // Update balance from Lightning wallet when it changes
   useEffect(() => {
-    dispatch({ 
-      type: 'UPDATE_BALANCE', 
-      payload: { 
-        lightning: 25000,
-        fiat: 1250.32
-      }
-    });
-  }, []);
+    if (lightningWallet.balance) {
+      const lightningBalanceSats = lightningWallet.balance.balance;
+      const fiatValue = lightningBalanceSats * 0.05; // Approximate conversion rate
+      
+      dispatch({ 
+        type: 'UPDATE_BALANCE', 
+        payload: { 
+          lightning: lightningBalanceSats,
+          fiat: fiatValue
+        }
+      });
+    }
+  }, [lightningWallet.balance]);
 
   return (
     <WalletContext.Provider value={{
@@ -342,9 +348,9 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       sendFlow: state.sendFlow,
       receiveFlow: state.receiveFlow,
       
-      // Lightning state
+      // Lightning state - use real values from Lightning wallet
       isLightningInitialized: lightningWallet.isInitialized,
-      lightningBalance: lightningWallet.balance?.balance || 25000,
+      lightningBalance: lightningWallet.balance?.balance || 0,
       lightningError: lightningWallet.errorMessage,
       isLightningLoading: lightningWallet.isLoading,
       isLightningConnecting: lightningWallet.isConnecting,
