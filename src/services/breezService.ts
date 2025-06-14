@@ -33,7 +33,7 @@ export interface BreezPayment {
 }
 
 // Certificate for Breez authentication
-const BREEZ_CERTIFICATE = `MIIBfjCCATCgAwIBAgIHPh1T9W3eozAFBgMrZXAwEDEOMAwGA1UEAxMFQnJlZXowHhcNMjUwNTI3MTgxMTM5WhcNMzUwNTI1MTgxMTM5WjArMRAwDgYDVQQKEwdpUGF5QlRDMRcwFQYDVQQDEw5BbnRob255ICBVc2hpZTAqMAUGAytlcAMhANCD9cvfIDwcoiDKKYdT9BunHLS2/OuKzV8NS0SzqV13o4GNMIGKMA4GA1UdDwEB/wQEAwIFoDAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBTaOaPuXmtLDTJVv++VYBiQr9gHCTAfBgNVHSMEGDAWgBTeqtaSVvON53SSFvxMtiCyayiYazAqBgNVHREEIzAhgR9hbnRob255dHdhbjc1b2ZmaWNpYWxAZ21haWwuY29tMAUGAytlcANBAMeVKtqppAVc0tVWDWnCFhstHvqoSES+cJnbwVGVExmcPckSxEaTFJ4U2zvUeyQyGPy/Ifotm178YMuDWVQ63Q8=`;
+const BREEZ_CERTIFICATE = `MIIBfjCCATCgAwIBAgIHPh1T9W3eozAFBgMrZXAwEDEOMAwGA1UEAxMFQnJlZXowHhcNMjUwNTI3MTgxMTM5WhcNMzUwNTI1MTgxMTM5WjArMRAwDgYDVQQKEwdpUGF5QlRDMRcwFQYDVQQDEw5BbnRob255ICBVc2hpZTAqMAUGAytlcAMhANCD9cvfIDwcoiDKKYdT9BunHLS2/OuKzV8NS0SzqV13o4GNMIGKMA4GA1UdDwEB/wQEAwIFoDAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBTaOaPuXmtLDTJVv++VYBiQr9gHCTAfBgNVHSMEGDAWgBTeqtaSVvON53SSFvxMtiCyayiYazAqBgNVHREEIzAhgR9hbnRob255dHdhbjc1b2ZmaWNpYWxAZ21haWwuY29t`;
 
 export class BreezService {
   private static instance: BreezService;
@@ -55,8 +55,8 @@ export class BreezService {
 
       console.log('Initializing Breez SDK with proper configuration...');
       
-      // Create config with proper network enum
-      const config = await defaultConfig(LiquidNetwork.MAINNET);
+      // Create config with mainnet
+      const config = await defaultConfig('mainnet');
       config.breezApiKey = BREEZ_CERTIFICATE;
 
       // Convert mnemonic to proper seed using BIP39
@@ -65,7 +65,7 @@ export class BreezService {
       // Connect to Breez SDK
       this.sdk = await connect({
         config,
-        seed
+        seed: Array.from(seed)
       });
       
       this.isInitialized = true;
@@ -95,7 +95,7 @@ export class BreezService {
     }
 
     try {
-      const walletInfo = await getInfo();
+      const walletInfo = await this.sdk.getInfo();
       return {
         isConnected: true,
         balance: walletInfo.balanceSat || 0,
@@ -117,15 +117,10 @@ export class BreezService {
       // Convert sats to millisats
       const amountMsat = amountSats * 1000;
 
-      // Prepare receive payment
-      const prepareResponse = await prepareReceivePayment({
+      // Create invoice using SDK method
+      const invoice = await this.sdk.receivePayment({
         amountMsat,
         description: description || 'Lightning payment'
-      });
-
-      // Execute receive payment
-      const invoice = await receivePayment({
-        prepareResponse
       });
 
       return {
@@ -150,14 +145,9 @@ export class BreezService {
         throw new Error('Invalid Lightning invoice format');
       }
 
-      // Prepare send payment
-      const prepareResponse = await prepareSendPayment({
+      // Pay invoice using SDK method
+      const payment = await this.sdk.sendPayment({
         bolt11
-      });
-
-      // Execute send payment
-      const payment = await sendPayment({
-        prepareResponse
       });
 
       return {
@@ -187,7 +177,7 @@ export class BreezService {
     }
 
     try {
-      await sync();
+      await this.sdk.sync();
       console.log('Wallet synced successfully');
     } catch (error) {
       console.error('Failed to sync:', error);
