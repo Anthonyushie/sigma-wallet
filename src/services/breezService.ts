@@ -204,6 +204,7 @@ export class BreezService {
 
       // Step 1: Prepare the receive payment request
       const prepareRequest = {
+        paymentMethod: "lightning", // Add required paymentMethod field
         amountMsat,
         description: description || 'Lightning payment'
       };
