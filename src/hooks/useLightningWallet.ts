@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
 import { WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
@@ -224,7 +223,7 @@ export const useLightningWallet = () => {
         createdAt: new Date().toISOString(),
       };
 
-      await updateBalanceFromBrez();
+      await updateBalanceFromBreez();
       return payment;
     } catch (error) {
       handleError(error);

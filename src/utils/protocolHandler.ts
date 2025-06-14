@@ -4,10 +4,9 @@ export class LightningProtocolHandler {
     // Register protocol handler if supported
     if ('registerProtocolHandler' in navigator) {
       try {
-        navigator.registerProtocolHandler(
+        (navigator as any).registerProtocolHandler(
           'lightning',
-          `${window.location.origin}/?lightning=%s`,
-          'SIGMA STACK Lightning Wallet'
+          `${window.location.origin}/?lightning=%s`
         );
         console.log('Lightning protocol handler registered');
       } catch (error) {
