@@ -3,7 +3,6 @@ import {
   initSDK,
   defaultConfig,
   connect,
-  PaymentState,
   type Config,
   type PrepareReceivePaymentRequest,
   type PrepareReceivePaymentResponse,
@@ -175,7 +174,7 @@ export class BreezSDKService {
         bolt11,
         amount: Math.floor(sendResponse.payment.amountMsat / 1000), // Convert millisats to sats
         description: sendResponse.payment.description || 'Lightning payment',
-        status: sendResponse.payment.paymentState === PaymentState.COMPLETE ? 'complete' : 'pending',
+        status: sendResponse.payment.paymentState === BreezSDK.PaymentState.COMPLETE ? 'complete' : 'pending',
         createdAt: new Date(sendResponse.payment.timestamp * 1000).toISOString(),
       };
     } catch (error) {
@@ -214,8 +213,8 @@ export class BreezSDKService {
         type: payment.paymentType === 'receive' ? 'receive' : 'send',
         amount: Math.floor(payment.amountMsat / 1000), // Convert millisats to sats
         description: payment.description || 'Lightning payment',
-        status: payment.paymentState === PaymentState.COMPLETE ? 'complete' : 
-                payment.paymentState === PaymentState.FAILED ? 'failed' : 'pending',
+        status: payment.paymentState === BreezSDK.PaymentState.COMPLETE ? 'complete' : 
+                payment.paymentState === BreezSDK.PaymentState.FAILED ? 'failed' : 'pending',
         timestamp: new Date(payment.timestamp * 1000).toISOString(),
         bolt11: payment.destination,
       }));
@@ -242,8 +241,8 @@ export class BreezSDKService {
         bolt11: payment.destination || '',
         amount: Math.floor(payment.amountMsat / 1000),
         description: payment.description,
-        status: payment.paymentState === PaymentState.COMPLETE ? 'paid' : 
-                payment.paymentState === PaymentState.FAILED ? 'expired' : 'pending',
+        status: payment.paymentState === BreezSDK.PaymentState.COMPLETE ? 'paid' : 
+                payment.paymentState === BreezSDK.PaymentState.FAILED ? 'expired' : 'pending',
         createdAt: new Date(payment.timestamp * 1000).toISOString(),
         expiresAt: new Date(payment.timestamp * 1000 + 3600000).toISOString(),
       };
