@@ -53,6 +53,7 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MB to handle large WASM files
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\./,
