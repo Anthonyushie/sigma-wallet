@@ -1,3 +1,4 @@
+
 import init, {
   connect,
   defaultConfig,
@@ -199,13 +200,14 @@ export class BreezService {
     try {
       const amountMsat = amountSats * 1000;
 
-      console.log('Creating invoice with params:', { amountMsat, description });
+      console.log('Creating invoice with params:', { amountSats, amountMsat, description });
 
-      // Step 1: Prepare the receive payment request with correct payment method format
+      // Step 1: Prepare the receive payment request with correct Liquid Lightning format
       const prepareRequest = {
-        paymentMethod: "lightning", // Use string variant instead of object
-        payerAmountSat: amountSats, // Set the Bitcoin payer amount at top level
-        amountMsat,
+        paymentMethod: {
+          type: "lightning" as const,
+        },
+        payerAmountSat: amountSats, // Bitcoin payer amount for Liquid Lightning
         description: description || 'Lightning payment'
       };
 
