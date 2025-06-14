@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 
 interface PreloadScreenProps {
@@ -68,7 +69,7 @@ const PreloadScreen: React.FC<PreloadScreenProps> = ({ onComplete }) => {
 
       {/* Main content container */}
       <div className="relative z-10 text-center">
-        {/* Placeholder for image */}
+        {/* Image placeholder */}
         <div className="relative mb-8">
           <div className={`
             transform transition-all duration-300
@@ -76,7 +77,7 @@ const PreloadScreen: React.FC<PreloadScreenProps> = ({ onComplete }) => {
           `}>
             <div
               className={`
-                w-48 h-48 bg-gradient-to-br from-electric-blue to-electric-purple border-8 border-black shadow-brutal-lg flex items-center justify-center text-6xl font-black
+                w-48 h-48 bg-gradient-to-br from-electric-blue to-electric-purple border-8 border-black shadow-brutal-lg flex items-center justify-center overflow-hidden
                 ${glitchActive ? 'filter brightness-200 contrast-150 saturate-200' : ''}
                 animate-pulse-electric
               `}
@@ -85,7 +86,11 @@ const PreloadScreen: React.FC<PreloadScreenProps> = ({ onComplete }) => {
                 transition: 'clip-path 0.5s ease-out'
               }}
             >
-              Σ
+              <img 
+                src="/lovable-uploads/ac617c1f-3a7e-45dc-a7f0-34feeb579c64.png" 
+                alt="Sigma Logo" 
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
           

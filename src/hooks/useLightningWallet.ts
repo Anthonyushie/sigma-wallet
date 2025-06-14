@@ -1,61 +1,76 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
-import { BreezSDKService, BreezBalance, BreezTransaction, BreezInvoice, BreezPayment } from '../services/breezSDK';
-import { WasmLoader } from '../utils/wasmLoader';
+import { WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
 import { BreezErrorHandler, BreezError } from '../utils/errorHandling';
+import { breezService, BreezWalletState, BreezInvoice, BreezPayment } from '../services/breezService';
 
 export interface LightningWalletState {
   isInitialized: boolean;
   walletKeys: WalletKeys | null;
-  balance: BreezBalance | null;
-  transactions: BreezTransaction[];
+  balance: WebLNBalance | null;
+  transactions: WebLNTransaction[];
   isLoading: boolean;
   error: BreezError | null;
   isConnecting: boolean;
   lastSyncTime: Date | null;
+  isOnline: boolean;
 }
 
 export const useLightningWallet = () => {
   const [state, setState] = useState<LightningWalletState>({
     isInitialized: false,
     walletKeys: null,
-    balance: null,
+    balance: { balance: 0, pendingReceive: 0, pendingSend: 0 },
     transactions: [],
     isLoading: false,
     error: null,
     isConnecting: false,
     lastSyncTime: null,
+    isOnline: navigator.onLine,
   });
 
-  const setLoading = (isLoading: boolean) => {
+  const setLoading = useCallback((isLoading: boolean) => {
     setState(prev => ({ ...prev, isLoading }));
-  };
+  }, []);
 
-  const setConnecting = (isConnecting: boolean) => {
+  const setConnecting = useCallback((isConnecting: boolean) => {
     setState(prev => ({ ...prev, isConnecting }));
-  };
+  }, []);
 
-  const setError = (error: BreezError | null) => {
+  const setError = useCallback((error: BreezError | null) => {
     setState(prev => ({ ...prev, error }));
-  };
+  }, []);
 
-  const handleError = (error: unknown): BreezError => {
+  const handleError = useCallback((error: unknown): BreezError => {
     const breezError = BreezErrorHandler.handleError(error);
     setError(breezError);
     return breezError;
-  };
+  }, [setError]);
 
-  const initializeWallet = async () => {
+  const updateBalanceFromBreez = useCallback(async () => {
+    try {
+      if (!breezService.isReady()) return;
+
+      const walletState: BreezWalletState = await breezService.getWalletInfo();
+      
+      setState(prev => ({
+        ...prev,
+        balance: {
+          balance: walletState.balance,
+          pendingReceive: walletState.pendingReceive,
+          pendingSend: walletState.pendingSend,
+        },
+        lastSyncTime: new Date(),
+      }));
+    } catch (error) {
+      handleError(error);
+    }
+  }, [handleError]);
+
+  const initializeWallet = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Ensure WASM is loaded
-      if (!WasmLoader.isWasmSupported()) {
-        throw new Error('WebAssembly is not supported in this browser');
-      }
-
-      await WasmLoader.ensureWasmLoaded();
 
       const hasWallet = await BitcoinWalletService.hasWallet();
       if (hasWallet) {
@@ -63,123 +78,122 @@ export const useLightningWallet = () => {
         if (mnemonic) {
           const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
           
+          // Initialize Breez SDK
           setConnecting(true);
-          // Connect to Breez SDK
-          await BreezSDKService.connect(mnemonic);
+          await breezService.initialize(mnemonic);
           setConnecting(false);
-          
+
           setState(prev => ({
             ...prev,
             isInitialized: true,
             walletKeys,
           }));
-          
-          await refreshWalletData();
+
+          await updateBalanceFromBreez();
         }
       }
     } catch (error) {
-      handleError(error);
       setConnecting(false);
+      handleError(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleError, setLoading, setConnecting, updateBalanceFromBreez]);
 
-  const createWallet = async (): Promise<string[]> => {
+  const createWallet = useCallback(async (): Promise<string[]> => {
     try {
       setLoading(true);
       setError(null);
-
-      // Ensure WASM is loaded
-      await WasmLoader.ensureWasmLoaded();
 
       const walletKeys = await BitcoinWalletService.generateWallet();
-      
+
+      // Initialize Breez SDK with new mnemonic
       setConnecting(true);
-      // Connect to Breez SDK with new mnemonic
-      await BreezSDKService.connect(walletKeys.mnemonic);
+      await breezService.initialize(walletKeys.mnemonic);
       setConnecting(false);
-      
+
       setState(prev => ({
         ...prev,
         isInitialized: true,
         walletKeys,
       }));
 
-      await refreshWalletData();
+      await updateBalanceFromBreez();
       return walletKeys.mnemonic.split(' ');
     } catch (error) {
-      handleError(error);
       setConnecting(false);
+      handleError(error);
       throw error;
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleError, setLoading, setConnecting, updateBalanceFromBreez]);
 
-  const restoreWallet = async (mnemonic: string): Promise<void> => {
+  const restoreWallet = useCallback(async (mnemonic: string): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
 
-      // Ensure WASM is loaded
-      await WasmLoader.ensureWasmLoaded();
-
       const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
-      
+
+      // Initialize Breez SDK
       setConnecting(true);
-      // Connect to Breez SDK
-      await BreezSDKService.connect(mnemonic);
+      await breezService.initialize(mnemonic);
       setConnecting(false);
-      
+
       setState(prev => ({
         ...prev,
         isInitialized: true,
         walletKeys,
       }));
 
-      await refreshWalletData();
+      await updateBalanceFromBreez();
     } catch (error) {
-      handleError(error);
       setConnecting(false);
+      handleError(error);
       throw error;
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleError, setLoading, setConnecting, updateBalanceFromBreez]);
 
-  const refreshWalletData = async () => {
+  const refreshWalletData = useCallback(async () => {
     try {
-      if (!BreezSDKService.isConnected()) {
-        return;
+      setLoading(true);
+      
+      if (breezService.isReady()) {
+        await breezService.sync();
+        await updateBalanceFromBreez();
       }
-
-      // Sync with the network first
-      await BreezSDKService.sync();
-
-      const [balance, transactions] = await Promise.all([
-        BreezSDKService.getBalance(),
-        BreezSDKService.getTransactions(),
-      ]);
-
-      setState(prev => ({
-        ...prev,
-        balance,
-        transactions,
-        lastSyncTime: new Date(),
-      }));
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [handleError, setLoading, updateBalanceFromBreez]);
 
-  const createInvoice = async (amount: number, description?: string): Promise<BreezInvoice> => {
+  const createInvoice = useCallback(async (amount: number, description?: string): Promise<WebLNInvoice> => {
     try {
       setLoading(true);
       setError(null);
 
-      const invoice = await BreezSDKService.createInvoice(amount, description);
-      await refreshWalletData();
+      if (!breezService.isReady()) {
+        throw new Error('Lightning wallet not ready');
+      }
+
+      const response: BreezInvoice = await breezService.createInvoice(amount, description);
+      
+      const invoice: WebLNInvoice = {
+        id: response.paymentHash,
+        bolt11: response.bolt11,
+        amount,
+        description: description || 'Lightning payment',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      };
+
+      await updateBalanceFromBreez();
       return invoice;
     } catch (error) {
       handleError(error);
@@ -187,15 +201,29 @@ export const useLightningWallet = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleError, setLoading, updateBalanceFromBreez]);
 
-  const payInvoice = async (bolt11: string): Promise<BreezPayment> => {
+  const payInvoice = useCallback(async (bolt11: string): Promise<WebLNPayment> => {
     try {
       setLoading(true);
       setError(null);
 
-      const payment = await BreezSDKService.payInvoice(bolt11);
-      await refreshWalletData();
+      if (!breezService.isReady()) {
+        throw new Error('Lightning wallet not ready');
+      }
+
+      const response: BreezPayment = await breezService.payInvoice(bolt11);
+      
+      const payment: WebLNPayment = {
+        id: response.paymentHash,
+        bolt11,
+        amount: Math.floor(response.amountMsat / 1000), // Convert msat to sat
+        description: 'Lightning payment',
+        status: response.status === 'complete' ? 'complete' : 'pending',
+        createdAt: new Date().toISOString(),
+      };
+
+      await updateBalanceFromBreez();
       return payment;
     } catch (error) {
       handleError(error);
@@ -203,12 +231,13 @@ export const useLightningWallet = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleError, setLoading, updateBalanceFromBreez]);
 
-  const deleteWallet = async () => {
+  const deleteWallet = useCallback(async () => {
     try {
-      await BreezSDKService.disconnect();
+      await breezService.disconnect();
       await BitcoinWalletService.deleteWallet();
+      
       setState({
         isInitialized: false,
         walletKeys: null,
@@ -218,32 +247,45 @@ export const useLightningWallet = () => {
         error: null,
         isConnecting: false,
         lastSyncTime: null,
+        isOnline: navigator.onLine,
       });
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [handleError]);
 
-  const retryLastOperation = async () => {
+  const retryLastOperation = useCallback(async () => {
     if (state.error && BreezErrorHandler.isRetryable(state.error.type)) {
       await refreshWalletData();
     }
-  };
+  }, [state.error, refreshWalletData]);
 
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setState(prev => ({ ...prev, isOnline: true }));
+      if (breezService.isReady()) {
+        refreshWalletData();
+      }
+    };
+
+    const handleOffline = () => {
+      setState(prev => ({ ...prev, isOnline: false }));
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [refreshWalletData]);
+
+  // Initialize wallet on mount
   useEffect(() => {
     initializeWallet();
-  }, []);
-
-  // Auto-refresh wallet data every 30 seconds
-  useEffect(() => {
-    if (state.isInitialized && BreezSDKService.isConnected()) {
-      const interval = setInterval(() => {
-        refreshWalletData();
-      }, 30000);
-
-      return () => clearInterval(interval);
-    }
-  }, [state.isInitialized]);
+  }, [initializeWallet]);
 
   return {
     ...state,

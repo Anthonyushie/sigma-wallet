@@ -7,15 +7,16 @@ import Layout from '../components/Layout';
 import BalanceCard from '../components/BalanceCard';
 import TransactionItem from '../components/TransactionItem';
 import ActionButton from '../components/ActionButton';
+import LightningStatus from '../components/LightningStatus';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { wallet } = useWallet();
 
   return (
-    <Layout title="SIGMA WALLET">
+    <Layout title="SIGMA STACK">
       <div className="max-w-md mx-auto space-y-6">
-        
+
         {/* Settings Button */}
         <div className="flex justify-end">
           <button
@@ -26,19 +27,21 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
 
+        {/* Lightning Status */}
+        <LightningStatus />
+
         {/* Balance Cards */}
         <div className="space-y-4">
           <BalanceCard
-            title="BITCOIN BALANCE"
+            title="BITCOIN STASH"
             amount={wallet.balance.bitcoin}
             unit="BTC"
             fiatValue={wallet.balance.fiat}
             currency={wallet.balance.currency}
             color="electric"
           />
-          
           <BalanceCard
-            title="LIGHTNING BALANCE"
+            title="LIGHTNING STACK"
             amount={wallet.balance.lightning}
             unit="SATS"
             color="lime"
@@ -53,29 +56,34 @@ const Dashboard: React.FC = () => {
             size="lg"
             className="w-full"
           >
-            SEND
+            YEET SOME COIN
           </ActionButton>
-          
           <ActionButton
             onClick={() => navigate('/receive')}
             variant="success"
             size="lg"
             className="w-full"
           >
-            RECEIVE
+            SECURE THE BAG
           </ActionButton>
         </div>
 
         {/* Transaction History */}
         <div className="space-y-4">
-          <h2 className="text-xl font-black uppercase">RECENT TRANSACTIONS</h2>
+          <h2 className="text-xl font-black uppercase">YOUR LATEST MOVES</h2>
           <div className="space-y-3">
-            {wallet.transactions.map((transaction) => (
-              <TransactionItem 
-                key={transaction.id} 
-                transaction={transaction} 
-              />
-            ))}
+            {wallet.transactions.length === 0 ? (
+              <div className="font-mono text-gray-500 text-center p-4 bg-gray-100 rounded-lg">
+                No plays yet.<br />Go make some moves! 🤑
+              </div>
+            ) : (
+              wallet.transactions.map((transaction) => (
+                <TransactionItem
+                  key={transaction.id}
+                  transaction={transaction}
+                />
+              ))
+            )}
           </div>
         </div>
       </div>

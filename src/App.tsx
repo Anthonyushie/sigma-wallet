@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "./context/WalletContext";
 import { useState } from "react";
 import PreloadScreen from "./components/PreloadScreen";
+import OfflineIndicator from "./components/OfflineIndicator";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Send from "./pages/Send";
@@ -83,6 +84,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <OfflineIndicator />
         <WalletProvider>
           <BrowserRouter>
             <AppRoutes />

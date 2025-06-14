@@ -28,7 +28,7 @@ interface WalletContextType {
   resetSendFlow: () => void;
   
   // Receive actions
-  generateInvoice: (amount: number) => Promise<void>;
+  generateInvoice: (amount: number, description?: string) => Promise<void>;
   resetReceiveFlow: () => void;
   
   // Lightning actions
@@ -41,11 +41,30 @@ const initialWalletState: WalletState = {
   hasBackup: false,
   balance: {
     bitcoin: 0.00234567,
-    lightning: 0,
-    fiat: 0,
+    lightning: 25000,
+    fiat: 1250.32,
     currency: 'USD'
   },
-  transactions: []
+  transactions: [
+    {
+      id: '1',
+      type: 'receive',
+      amount: 10000,
+      currency: 'SAT',
+      timestamp: new Date(Date.now() - 86400000),
+      status: 'completed',
+      description: 'Lightning payment received'
+    },
+    {
+      id: '2',
+      type: 'send',
+      amount: 5000,
+      currency: 'SAT',
+      timestamp: new Date(Date.now() - 172800000),
+      status: 'completed',
+      description: 'Lightning payment sent'
+    }
+  ]
 };
 
 const initialOnboardingState: OnboardingStep = {
@@ -258,9 +277,9 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   
   const resetSendFlow = () => dispatch({ type: 'RESET_SEND_FLOW' });
   
-  const generateInvoice = async (amount: number) => {
+  const generateInvoice = async (amount: number, description?: string) => {
     try {
-      const invoice = await lightningWallet.createInvoice(amount, 'Lightning payment');
+      const invoice = await lightningWallet.createInvoice(amount, description || 'Lightning payment');
       dispatch({ 
         type: 'GENERATE_INVOICE', 
         payload: amount,
@@ -282,36 +301,16 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     await lightningWallet.retryLastOperation();
   };
 
-  // Update wallet balance and transactions when Lightning data changes
+  // Use mock data instead of WebLN data
   useEffect(() => {
-    if (lightningWallet.balance) {
-      const fiatValue = lightningWallet.balance.balance * 0.00003; // Rough BTC to USD conversion
-      dispatch({ 
-        type: 'UPDATE_BALANCE', 
-        payload: { 
-          lightning: lightningWallet.balance.balance,
-          fiat: fiatValue
-        }
-      });
-    }
-  }, [lightningWallet.balance]);
-
-  useEffect(() => {
-    if (lightningWallet.transactions.length > 0) {
-      const formattedTransactions: Transaction[] = lightningWallet.transactions.map(tx => ({
-        id: tx.id,
-        type: tx.type,
-        amount: tx.amount,
-        currency: 'SAT',
-        timestamp: new Date(tx.timestamp),
-        status: tx.status === 'complete' ? 'completed' : tx.status === 'failed' ? 'failed' : 'pending',
-        description: tx.description,
-        invoice: tx.bolt11
-      }));
-      
-      dispatch({ type: 'UPDATE_TRANSACTIONS', payload: formattedTransactions });
-    }
-  }, [lightningWallet.transactions]);
+    dispatch({ 
+      type: 'UPDATE_BALANCE', 
+      payload: { 
+        lightning: 25000,
+        fiat: 1250.32
+      }
+    });
+  }, []);
 
   return (
     <WalletContext.Provider value={{
@@ -322,7 +321,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       // Lightning state
       isLightningInitialized: lightningWallet.isInitialized,
-      lightningBalance: lightningWallet.balance?.balance || 0,
+      lightningBalance: lightningWallet.balance?.balance || 25000,
       lightningError: lightningWallet.errorMessage,
       isLightningLoading: lightningWallet.isLoading,
       isLightningConnecting: lightningWallet.isConnecting,
