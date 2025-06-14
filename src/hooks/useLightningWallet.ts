@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
-import { WebLNService, WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
+import { WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
 import { BreezErrorHandler, BreezError } from '../utils/errorHandling';
 
 export interface LightningWalletState {
@@ -19,12 +19,12 @@ export const useLightningWallet = () => {
   const [state, setState] = useState<LightningWalletState>({
     isInitialized: false,
     walletKeys: null,
-    balance: null,
+    balance: { balance: 25000, pendingReceive: 0, pendingSend: 0 },
     transactions: [],
     isLoading: false,
     error: null,
     isConnecting: false,
-    lastSyncTime: null,
+    lastSyncTime: new Date(),
   });
 
   const setLoading = (isLoading: boolean) => {
@@ -56,11 +56,6 @@ export const useLightningWallet = () => {
         if (mnemonic) {
           const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
           
-          setConnecting(true);
-          // Connect to WebLN
-          await WebLNService.connect();
-          setConnecting(false);
-          
           setState(prev => ({
             ...prev,
             isInitialized: true,
@@ -72,7 +67,6 @@ export const useLightningWallet = () => {
       }
     } catch (error) {
       handleError(error);
-      setConnecting(false);
     } finally {
       setLoading(false);
     }
@@ -85,11 +79,6 @@ export const useLightningWallet = () => {
 
       const walletKeys = await BitcoinWalletService.generateWallet();
       
-      setConnecting(true);
-      // Connect to WebLN
-      await WebLNService.connect();
-      setConnecting(false);
-      
       setState(prev => ({
         ...prev,
         isInitialized: true,
@@ -100,7 +89,6 @@ export const useLightningWallet = () => {
       return walletKeys.mnemonic.split(' ');
     } catch (error) {
       handleError(error);
-      setConnecting(false);
       throw error;
     } finally {
       setLoading(false);
@@ -114,11 +102,6 @@ export const useLightningWallet = () => {
 
       const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
       
-      setConnecting(true);
-      // Connect to WebLN
-      await WebLNService.connect();
-      setConnecting(false);
-      
       setState(prev => ({
         ...prev,
         isInitialized: true,
@@ -128,7 +111,6 @@ export const useLightningWallet = () => {
       await refreshWalletData();
     } catch (error) {
       handleError(error);
-      setConnecting(false);
       throw error;
     } finally {
       setLoading(false);
@@ -137,22 +119,36 @@ export const useLightningWallet = () => {
 
   const refreshWalletData = async () => {
     try {
-      if (!WebLNService.isConnected()) {
-        return;
-      }
+      // Use mock data instead of WebLN
+      const mockBalance: WebLNBalance = {
+        balance: 25000,
+        pendingReceive: 0,
+        pendingSend: 0,
+      };
 
-      // Sync with the network first
-      await WebLNService.sync();
-
-      const [balance, transactions] = await Promise.all([
-        WebLNService.getBalance(),
-        WebLNService.getTransactions(),
-      ]);
+      const mockTransactions: WebLNTransaction[] = [
+        {
+          id: '1',
+          type: 'receive',
+          amount: 10000,
+          description: 'Lightning payment received',
+          status: 'complete',
+          timestamp: new Date(Date.now() - 86400000).toISOString(),
+        },
+        {
+          id: '2',
+          type: 'send',
+          amount: 5000,
+          description: 'Lightning payment sent',
+          status: 'complete',
+          timestamp: new Date(Date.now() - 172800000).toISOString(),
+        }
+      ];
 
       setState(prev => ({
         ...prev,
-        balance,
-        transactions,
+        balance: mockBalance,
+        transactions: mockTransactions,
         lastSyncTime: new Date(),
       }));
     } catch (error) {
@@ -165,9 +161,19 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      const invoice = await WebLNService.createInvoice(amount, description);
+      // Mock invoice generation
+      const mockInvoice: WebLNInvoice = {
+        id: `invoice_${Date.now()}`,
+        bolt11: `lnbc${amount}u1pwrp5z5pp5rw8awzpnz2drg9fhz2t3c5w4u8q7hnpm9pjq8wg7rwm6lczjl2qqsqjpgx`,
+        amount,
+        description: description || 'Lightning payment',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      };
+
       await refreshWalletData();
-      return invoice;
+      return mockInvoice;
     } catch (error) {
       handleError(error);
       throw error;
@@ -181,9 +187,18 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      const payment = await WebLNService.payInvoice(bolt11);
+      // Mock payment
+      const mockPayment: WebLNPayment = {
+        id: `payment_${Date.now()}`,
+        bolt11,
+        amount: 0,
+        description: 'Lightning payment',
+        status: 'complete',
+        createdAt: new Date().toISOString(),
+      };
+
       await refreshWalletData();
-      return payment;
+      return mockPayment;
     } catch (error) {
       handleError(error);
       throw error;
@@ -194,7 +209,6 @@ export const useLightningWallet = () => {
 
   const deleteWallet = async () => {
     try {
-      await WebLNService.disconnect();
       await BitcoinWalletService.deleteWallet();
       setState({
         isInitialized: false,
@@ -220,17 +234,6 @@ export const useLightningWallet = () => {
   useEffect(() => {
     initializeWallet();
   }, []);
-
-  // Auto-refresh wallet data every 30 seconds
-  useEffect(() => {
-    if (state.isInitialized && WebLNService.isConnected()) {
-      const interval = setInterval(() => {
-        refreshWalletData();
-      }, 30000);
-
-      return () => clearInterval(interval);
-    }
-  }, [state.isInitialized]);
 
   return {
     ...state,

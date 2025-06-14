@@ -1,4 +1,5 @@
-import { requestProvider } from 'webln';
+
+// Mock WebLN service - no longer connects to actual WebLN providers
 
 export interface WebLNInvoice {
   id: string;
@@ -36,175 +37,92 @@ export interface WebLNTransaction {
 }
 
 export class WebLNService {
-  private static provider: any = null;
   private static connected = false;
 
   static async connect(): Promise<void> {
-    try {
-      console.log('Connecting to WebLN provider...');
-      this.provider = await requestProvider();
-      await this.provider.enable();
-      this.connected = true;
-      console.log('Successfully connected to WebLN provider');
-    } catch (error) {
-      console.error('Failed to connect to WebLN provider:', error);
-      throw new Error(`WebLN connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  private static ensureConnected(): void {
-    if (!this.provider || !this.connected) {
-      throw new Error('WebLN provider not connected. Call connect() first.');
-    }
+    console.log('Mock WebLN: Simulating connection...');
+    this.connected = true;
+    console.log('Mock WebLN: Successfully connected');
   }
 
   static async createInvoice(
     amount: number,
     description?: string
   ): Promise<WebLNInvoice> {
-    try {
-      console.log('Creating invoice with WebLN:', { amount, description });
-      this.ensureConnected();
-      
-      const invoice = await this.provider.makeInvoice({
-        amount: amount,
-        defaultMemo: description || 'Lightning payment'
-      });
-      
-      return {
-        id: `invoice_${Date.now()}`,
-        bolt11: invoice.paymentRequest,
-        amount,
-        description,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 3600000).toISOString(),
-      };
-    } catch (error) {
-      console.error('Failed to create invoice:', error);
-      throw new Error(`Invoice creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    console.log('Mock WebLN: Creating invoice:', { amount, description });
+    
+    return {
+      id: `invoice_${Date.now()}`,
+      bolt11: `lnbc${amount}u1pwrp5z5pp5rw8awzpnz2drg9fhz2t3c5w4u8q7hnpm9pjq8wg7rwm6lczjl2qqsqjpgx`,
+      amount,
+      description: description || 'Lightning payment',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    };
   }
 
   static async payInvoice(bolt11: string): Promise<WebLNPayment> {
-    try {
-      console.log('Paying invoice with WebLN:', bolt11);
-      this.ensureConnected();
-      
-      const payment = await this.provider.sendPayment(bolt11);
-      
-      return {
-        id: payment.preimage || `payment_${Date.now()}`,
-        bolt11,
-        amount: 0, // WebLN doesn't always provide amount in response
-        description: 'Lightning payment',
-        status: payment.preimage ? 'complete' : 'pending',
-        createdAt: new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error('Failed to pay invoice:', error);
-      throw new Error(`Payment failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    console.log('Mock WebLN: Paying invoice:', bolt11);
+    
+    return {
+      id: `payment_${Date.now()}`,
+      bolt11,
+      amount: 0,
+      description: 'Lightning payment',
+      status: 'complete',
+      createdAt: new Date().toISOString(),
+    };
   }
 
   static async getBalance(): Promise<WebLNBalance> {
-    try {
-      console.log('Getting balance from WebLN');
-      this.ensureConnected();
-      
-      // Try to get balance from provider if it supports it
-      if (this.provider && typeof this.provider.getBalance === 'function') {
-        const balance = await this.provider.getBalance();
-        return {
-          balance: balance.balance || 0,
-          pendingReceive: balance.pendingReceive || 0,
-          pendingSend: balance.pendingSend || 0,
-        };
-      }
-      
-      // If provider doesn't support getBalance, try getInfo
-      if (this.provider && typeof this.provider.getInfo === 'function') {
-        const info = await this.provider.getInfo();
-        return {
-          balance: info.balance || 0,
-          pendingReceive: 0,
-          pendingSend: 0,
-        };
-      }
-      
-      // If no balance methods available, return zero balance
-      console.warn('WebLN provider does not support balance retrieval');
-      return {
-        balance: 0,
-        pendingReceive: 0,
-        pendingSend: 0,
-      };
-    } catch (error) {
-      console.error('Failed to get balance:', error);
-      // Return zero balance instead of throwing error to prevent app crashes
-      return {
-        balance: 0,
-        pendingReceive: 0,
-        pendingSend: 0,
-      };
-    }
+    console.log('Mock WebLN: Getting balance');
+    
+    return {
+      balance: 25000,
+      pendingReceive: 0,
+      pendingSend: 0,
+    };
   }
 
   static async getTransactions(): Promise<WebLNTransaction[]> {
-    try {
-      console.log('Getting transactions from WebLN');
-      this.ensureConnected();
-      
-      // Try to get transactions from provider if it supports it
-      if (this.provider && typeof this.provider.getTransactions === 'function') {
-        const transactions = await this.provider.getTransactions();
-        return transactions.map((tx: any) => ({
-          id: tx.id || `tx_${Date.now()}`,
-          type: tx.type || 'receive',
-          amount: tx.amount || 0,
-          description: tx.description || 'Lightning transaction',
-          status: tx.status || 'complete',
-          timestamp: tx.timestamp || new Date().toISOString(),
-          bolt11: tx.bolt11,
-        }));
+    console.log('Mock WebLN: Getting transactions');
+    
+    return [
+      {
+        id: '1',
+        type: 'receive',
+        amount: 10000,
+        description: 'Lightning payment received',
+        status: 'complete',
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+      },
+      {
+        id: '2',
+        type: 'send',
+        amount: 5000,
+        description: 'Lightning payment sent',
+        status: 'complete',
+        timestamp: new Date(Date.now() - 172800000).toISOString(),
       }
-      
-      // If no transaction method available, return empty array
-      console.warn('WebLN provider does not support transaction history');
-      return [];
-    } catch (error) {
-      console.error('Failed to get transactions:', error);
-      return [];
-    }
+    ];
   }
 
   static async getInvoiceStatus(invoiceId: string): Promise<WebLNInvoice> {
-    try {
-      console.log('Getting invoice status from WebLN:', invoiceId);
-      this.ensureConnected();
-      
-      // Mock implementation - WebLN doesn't have standard invoice status checking
-      throw new Error('Invoice not found');
-    } catch (error) {
-      console.error('Failed to get invoice status:', error);
-      throw new Error(`Invoice status retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    console.log('Mock WebLN: Getting invoice status:', invoiceId);
+    throw new Error('Invoice not found');
   }
 
   static async disconnect(): Promise<void> {
-    if (this.provider) {
-      this.provider = null;
-      this.connected = false;
-      console.log('Disconnected from WebLN provider');
-    }
+    this.connected = false;
+    console.log('Mock WebLN: Disconnected');
   }
 
   static async sync(): Promise<void> {
-    // WebLN doesn't require syncing
-    console.log('WebLN sync completed (no-op)');
+    console.log('Mock WebLN: Sync completed');
   }
 
   static isConnected(): boolean {
-    return this.connected && this.provider !== null;
+    return this.connected;
   }
 }
