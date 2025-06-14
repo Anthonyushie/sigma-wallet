@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
 import { WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
 import { BreezErrorHandler, BreezError } from '../utils/errorHandling';
-// LDK imports
+// Mock LDK imports
 import { initLdkNode, ldkCreateInvoice, ldkPayInvoice, ldkGetBalance } from '../services/ldkService';
 
 export interface LightningWalletState {
