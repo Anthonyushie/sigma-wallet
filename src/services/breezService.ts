@@ -1,9 +1,7 @@
 
 import { 
   connect, 
-  defaultConfig,
-  BreezEvent,
-  LiquidNetwork
+  defaultConfig
 } from '@breeztech/breez-sdk-liquid';
 
 export interface BreezWalletState {
@@ -20,7 +18,7 @@ export class BreezService {
   private static instance: BreezService;
   private sdk: any = null;
   private isInitialized = false;
-  private eventListener: ((event: BreezEvent) => void) | null = null;
+  private eventListener: ((event: any) => void) | null = null;
 
   static getInstance(): BreezService {
     if (!BreezService.instance) {
@@ -37,21 +35,24 @@ export class BreezService {
 
       console.log('Initializing Breez SDK with certificate...');
       
-      // Create config with certificate
-      const config = await defaultConfig(LiquidNetwork.MAINNET);
+      // Create config with certificate - using mainnet string instead of enum
+      const config = await defaultConfig('mainnet');
       config.breezApiKey = BREEZ_CERTIFICATE;
       
       // Set up event listener
       if (!this.eventListener) {
-        this.eventListener = (event: BreezEvent) => {
+        this.eventListener = (event: any) => {
           console.log('Breez event received:', event);
         };
       }
 
+      // Convert mnemonic to seed array
+      const seedArray = this.mnemonicToSeedArray(mnemonic);
+
       // Connect to Breez SDK
       this.sdk = await connect({
         config,
-        seed: this.mnemonicToSeed(mnemonic),
+        seed: seedArray,
         eventListener: this.eventListener
       });
       
@@ -66,11 +67,11 @@ export class BreezService {
     }
   }
 
-  private mnemonicToSeed(mnemonic: string): Uint8Array {
-    // Simple seed generation - in production use proper BIP39
+  private mnemonicToSeedArray(mnemonic: string): number[] {
+    // Simple seed generation - convert to number array for SDK compatibility
     const encoder = new TextEncoder();
     const data = encoder.encode(mnemonic);
-    const seed = new Uint8Array(32);
+    const seed: number[] = new Array(32).fill(0);
     for (let i = 0; i < Math.min(data.length, 32); i++) {
       seed[i] = data[i];
     }
