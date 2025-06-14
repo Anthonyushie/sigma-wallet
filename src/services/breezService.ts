@@ -1,4 +1,3 @@
-
 import init, {
   connect,
   defaultConfig,
@@ -202,9 +201,12 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountMsat, description });
 
-      // Step 1: Prepare the receive payment request
+      // Step 1: Prepare the receive payment request with proper payment method config
       const prepareRequest = {
-        paymentMethod: "lightning", // Add required paymentMethod field
+        paymentMethod: {
+          type: "lightning",
+          payerAmountSat: amountSats  // Set the Bitcoin payer amount
+        },
         amountMsat,
         description: description || 'Lightning payment'
       };
