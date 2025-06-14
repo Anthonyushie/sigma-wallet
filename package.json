@@ -70,6 +70,7 @@
     "tiny-secp256k1": "^2.2.3",
     "vaul": "^0.9.3",
     "vite-plugin-wasm": "^3.4.1",
+    "webln": "^0.3.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {

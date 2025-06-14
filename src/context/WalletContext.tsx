@@ -2,6 +2,8 @@ import React, { createContext, useContext, useReducer, ReactNode, useEffect } fr
 import { WalletState, Transaction, OnboardingStep, SendFlowState, ReceiveFlowState } from '../types/wallet';
 import { useLightningWallet } from '../hooks/useLightningWallet';
 
+import { WebLNBalance, WebLNTransaction } from '../services/weblnService';
+
 interface WalletContextType {
   wallet: WalletState;
   onboarding: OnboardingStep;

@@ -1,14 +1,14 @@
+
 import { useState, useEffect } from 'react';
 import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
-import { BreezSDKService, BreezBalance, BreezTransaction, BreezInvoice, BreezPayment } from '../services/breezSDK';
-import { WasmLoader } from '../utils/wasmLoader';
+import { WebLNService, WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
 import { BreezErrorHandler, BreezError } from '../utils/errorHandling';
 
 export interface LightningWalletState {
   isInitialized: boolean;
   walletKeys: WalletKeys | null;
-  balance: BreezBalance | null;
-  transactions: BreezTransaction[];
+  balance: WebLNBalance | null;
+  transactions: WebLNTransaction[];
   isLoading: boolean;
   error: BreezError | null;
   isConnecting: boolean;
@@ -50,13 +50,6 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      // Ensure WASM is loaded
-      if (!WasmLoader.isWasmSupported()) {
-        throw new Error('WebAssembly is not supported in this browser');
-      }
-
-      await WasmLoader.ensureWasmLoaded();
-
       const hasWallet = await BitcoinWalletService.hasWallet();
       if (hasWallet) {
         const mnemonic = await BitcoinWalletService.getStoredMnemonic();
@@ -64,8 +57,8 @@ export const useLightningWallet = () => {
           const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
           
           setConnecting(true);
-          // Connect to Breez SDK
-          await BreezSDKService.connect(mnemonic);
+          // Connect to WebLN
+          await WebLNService.connect();
           setConnecting(false);
           
           setState(prev => ({
@@ -90,14 +83,11 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      // Ensure WASM is loaded
-      await WasmLoader.ensureWasmLoaded();
-
       const walletKeys = await BitcoinWalletService.generateWallet();
       
       setConnecting(true);
-      // Connect to Breez SDK with new mnemonic
-      await BreezSDKService.connect(walletKeys.mnemonic);
+      // Connect to WebLN
+      await WebLNService.connect();
       setConnecting(false);
       
       setState(prev => ({
@@ -122,14 +112,11 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      // Ensure WASM is loaded
-      await WasmLoader.ensureWasmLoaded();
-
       const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
       
       setConnecting(true);
-      // Connect to Breez SDK
-      await BreezSDKService.connect(mnemonic);
+      // Connect to WebLN
+      await WebLNService.connect();
       setConnecting(false);
       
       setState(prev => ({
@@ -150,16 +137,16 @@ export const useLightningWallet = () => {
 
   const refreshWalletData = async () => {
     try {
-      if (!BreezSDKService.isConnected()) {
+      if (!WebLNService.isConnected()) {
         return;
       }
 
       // Sync with the network first
-      await BreezSDKService.sync();
+      await WebLNService.sync();
 
       const [balance, transactions] = await Promise.all([
-        BreezSDKService.getBalance(),
-        BreezSDKService.getTransactions(),
+        WebLNService.getBalance(),
+        WebLNService.getTransactions(),
       ]);
 
       setState(prev => ({
@@ -173,12 +160,12 @@ export const useLightningWallet = () => {
     }
   };
 
-  const createInvoice = async (amount: number, description?: string): Promise<BreezInvoice> => {
+  const createInvoice = async (amount: number, description?: string): Promise<WebLNInvoice> => {
     try {
       setLoading(true);
       setError(null);
 
-      const invoice = await BreezSDKService.createInvoice(amount, description);
+      const invoice = await WebLNService.createInvoice(amount, description);
       await refreshWalletData();
       return invoice;
     } catch (error) {
@@ -189,12 +176,12 @@ export const useLightningWallet = () => {
     }
   };
 
-  const payInvoice = async (bolt11: string): Promise<BreezPayment> => {
+  const payInvoice = async (bolt11: string): Promise<WebLNPayment> => {
     try {
       setLoading(true);
       setError(null);
 
-      const payment = await BreezSDKService.payInvoice(bolt11);
+      const payment = await WebLNService.payInvoice(bolt11);
       await refreshWalletData();
       return payment;
     } catch (error) {
@@ -207,7 +194,7 @@ export const useLightningWallet = () => {
 
   const deleteWallet = async () => {
     try {
-      await BreezSDKService.disconnect();
+      await WebLNService.disconnect();
       await BitcoinWalletService.deleteWallet();
       setState({
         isInitialized: false,
@@ -236,7 +223,7 @@ export const useLightningWallet = () => {
 
   // Auto-refresh wallet data every 30 seconds
   useEffect(() => {
-    if (state.isInitialized && BreezSDKService.isConnected()) {
+    if (state.isInitialized && WebLNService.isConnected()) {
       const interval = setInterval(() => {
         refreshWalletData();
       }, 30000);
