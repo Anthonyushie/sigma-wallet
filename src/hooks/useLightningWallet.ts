@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
 import { WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
 import { BreezErrorHandler, BreezError } from '../utils/errorHandling';
+// LDK imports
+import { initLdkNode, ldkCreateInvoice, ldkPayInvoice, ldkGetBalance } from '../services/ldkService';
 
 export interface LightningWalletState {
   isInitialized: boolean;
@@ -15,7 +17,9 @@ export interface LightningWalletState {
   lastSyncTime: Date | null;
 }
 
-export const useLightningWallet = () => {
+type LightningProvider = "mock" | "ldk"; // easily expand to support others
+
+export const useLightningWallet = (provider: LightningProvider = "mock") => {
   const [state, setState] = useState<LightningWalletState>({
     isInitialized: false,
     walletKeys: null,
@@ -45,6 +49,7 @@ export const useLightningWallet = () => {
     return breezError;
   };
 
+  // -- LDK node management --
   const initializeWallet = async () => {
     try {
       setLoading(true);
@@ -55,13 +60,17 @@ export const useLightningWallet = () => {
         const mnemonic = await BitcoinWalletService.getStoredMnemonic();
         if (mnemonic) {
           const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
-          
           setState(prev => ({
             ...prev,
             isInitialized: true,
             walletKeys,
           }));
-          
+
+          // If LDK, initialize it now
+          if (provider === "ldk") {
+            await initLdkNode(mnemonic);
+          }
+
           await refreshWalletData();
         }
       }
@@ -78,7 +87,12 @@ export const useLightningWallet = () => {
       setError(null);
 
       const walletKeys = await BitcoinWalletService.generateWallet();
-      
+
+      // If LDK, initialize it now
+      if (provider === "ldk") {
+        await initLdkNode(walletKeys.mnemonic);
+      }
+
       setState(prev => ({
         ...prev,
         isInitialized: true,
@@ -101,7 +115,12 @@ export const useLightningWallet = () => {
       setError(null);
 
       const walletKeys = await BitcoinWalletService.restoreWallet(mnemonic);
-      
+
+      // If LDK, initialize it now
+      if (provider === "ldk") {
+        await initLdkNode(mnemonic);
+      }
+
       setState(prev => ({
         ...prev,
         isInitialized: true,
@@ -119,7 +138,20 @@ export const useLightningWallet = () => {
 
   const refreshWalletData = async () => {
     try {
-      // Use mock data instead of WebLN
+      if (provider === "ldk") {
+        // Use LDK for real Lightning data
+        const bal = await ldkGetBalance();
+        // We don't have real transaction history here yet, just set a dummy one
+        setState(prev => ({
+          ...prev,
+          balance: { balance: bal, pendingReceive: 0, pendingSend: 0 },
+          transactions: [],
+          lastSyncTime: new Date(),
+        }));
+        return;
+      }
+
+      // ---- fallback to mock data ----
       const mockBalance: WebLNBalance = {
         balance: 25000,
         pendingReceive: 0,
@@ -161,7 +193,21 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      // Mock invoice generation
+      if (provider === "ldk") {
+        const ldkInvoice = await ldkCreateInvoice(amount, description);
+        await refreshWalletData();
+        return {
+          id: ldkInvoice.id || `ldk_invoice_${Date.now()}`,
+          bolt11: ldkInvoice.bolt11 || "",
+          amount,
+          description: description || 'LDK Lightning payment',
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        };
+      }
+
+      // ---- fallback to mock invoice ----
       const mockInvoice: WebLNInvoice = {
         id: `invoice_${Date.now()}`,
         bolt11: `lnbc${amount}u1pwrp5z5pp5rw8awzpnz2drg9fhz2t3c5w4u8q7hnpm9pjq8wg7rwm6lczjl2qqsqjpgx`,
@@ -187,7 +233,20 @@ export const useLightningWallet = () => {
       setLoading(true);
       setError(null);
 
-      // Mock payment
+      if (provider === "ldk") {
+        const payment = await ldkPayInvoice(bolt11);
+        await refreshWalletData();
+        return {
+          id: payment.id || `ldk_payment_${Date.now()}`,
+          bolt11,
+          amount: payment.amount || 0,
+          description: 'LDK Lightning payment',
+          status: payment.status === "complete" ? "complete" : "pending",
+          createdAt: new Date().toISOString(),
+        };
+      }
+
+      // ---- fallback to mock payment ----
       const mockPayment: WebLNPayment = {
         id: `payment_${Date.now()}`,
         bolt11,
@@ -233,6 +292,7 @@ export const useLightningWallet = () => {
 
   useEffect(() => {
     initializeWallet();
+    // eslint-disable-next-line
   }, []);
 
   return {
