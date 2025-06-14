@@ -1,29 +1,11 @@
+
 import init, {
   connect,
-  defaultConfig,
-  PaymentState,
-  SdkEvent
+  defaultConfig
 } from '@breeztech/breez-sdk-liquid/web';
 import * as bip39 from 'bip39';
-
-export interface BreezWalletState {
-  isConnected: boolean;
-  balance: number;
-  pendingReceive: number;
-  pendingSend: number;
-}
-
-export interface BreezInvoice {
-  bolt11: string;
-  paymentHash: string;
-  amountMsat: number;
-}
-
-export interface BreezPayment {
-  paymentHash: string;
-  status: PaymentState;
-  amountMsat: number;
-}
+import { BreezWalletState, BreezInvoice, BreezPayment } from './types';
+import { mnemonicToSeed, isValidLightningInvoice } from './utils';
 
 export class BreezService {
   private static instance: BreezService;
@@ -98,7 +80,7 @@ export class BreezService {
       config.breezApiKey = breezCertificate;
 
       // Convert mnemonic to seed
-      const seed = this.mnemonicToSeed(mnemonic);
+      const seed = mnemonicToSeed(mnemonic);
 
       // Connect with timeout and memory protection
       const connectPromise = connect({
@@ -148,15 +130,6 @@ export class BreezService {
       throw new Error('UNKNOWN_ERROR: Unknown error during Breez SDK initialization');
     } finally {
       this.initializationPromise = null;
-    }
-  }
-
-  private mnemonicToSeed(mnemonic: string): Uint8Array {
-    try {
-      const seedBuffer = bip39.mnemonicToSeedSync(mnemonic);
-      return new Uint8Array(seedBuffer.slice(0, 32));
-    } catch (error) {
-      throw new Error('Failed to convert mnemonic to seed');
     }
   }
 
@@ -256,7 +229,7 @@ export class BreezService {
     }
 
     try {
-      if (!this.isValidLightningInvoice(bolt11)) {
+      if (!isValidLightningInvoice(bolt11)) {
         throw new Error('Invalid Lightning invoice format');
       }
 
@@ -287,15 +260,6 @@ export class BreezService {
       }
       throw error;
     }
-  }
-
-  private isValidLightningInvoice(invoice: string): boolean {
-    const lowerInvoice = invoice.toLowerCase();
-    return (
-      lowerInvoice.startsWith('lnbc') ||
-      lowerInvoice.startsWith('lntb') ||
-      lowerInvoice.startsWith('lnbcrt')
-    ) && invoice.length > 20;
   }
 
   async sync(): Promise<void> {
@@ -335,5 +299,3 @@ export class BreezService {
     return this.isInitialized && this.sdk !== null;
   }
 }
-
-export const breezService = BreezService.getInstance();

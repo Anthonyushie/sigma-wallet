@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
 import { WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
 import { BreezErrorHandler, BreezError } from '../utils/errorHandling';
-import { breezService, BreezWalletState, BreezInvoice, BreezPayment } from '../services/breezService';
+import { breezService, BreezWalletState, BreezInvoice, BreezPayment } from '../services/breez';
 
 export interface LightningWalletState {
   isInitialized: boolean;
