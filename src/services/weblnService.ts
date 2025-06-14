@@ -1,4 +1,3 @@
-
 import { requestProvider } from 'webln';
 
 export interface WebLNInvoice {
@@ -113,16 +112,41 @@ export class WebLNService {
       console.log('Getting balance from WebLN');
       this.ensureConnected();
       
-      // WebLN doesn't have a standard balance method, so we'll return mock data
-      // In a real implementation, you'd need to use the specific wallet's API
+      // Try to get balance from provider if it supports it
+      if (this.provider && typeof this.provider.getBalance === 'function') {
+        const balance = await this.provider.getBalance();
+        return {
+          balance: balance.balance || 0,
+          pendingReceive: balance.pendingReceive || 0,
+          pendingSend: balance.pendingSend || 0,
+        };
+      }
+      
+      // If provider doesn't support getBalance, try getInfo
+      if (this.provider && typeof this.provider.getInfo === 'function') {
+        const info = await this.provider.getInfo();
+        return {
+          balance: info.balance || 0,
+          pendingReceive: 0,
+          pendingSend: 0,
+        };
+      }
+      
+      // If no balance methods available, return zero balance
+      console.warn('WebLN provider does not support balance retrieval');
       return {
-        balance: 100000, // Mock 100k sats
+        balance: 0,
         pendingReceive: 0,
         pendingSend: 0,
       };
     } catch (error) {
       console.error('Failed to get balance:', error);
-      throw new Error(`Balance retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Return zero balance instead of throwing error to prevent app crashes
+      return {
+        balance: 0,
+        pendingReceive: 0,
+        pendingSend: 0,
+      };
     }
   }
 
@@ -131,12 +155,26 @@ export class WebLNService {
       console.log('Getting transactions from WebLN');
       this.ensureConnected();
       
-      // WebLN doesn't have a standard transaction history method
-      // Return empty array for now
+      // Try to get transactions from provider if it supports it
+      if (this.provider && typeof this.provider.getTransactions === 'function') {
+        const transactions = await this.provider.getTransactions();
+        return transactions.map((tx: any) => ({
+          id: tx.id || `tx_${Date.now()}`,
+          type: tx.type || 'receive',
+          amount: tx.amount || 0,
+          description: tx.description || 'Lightning transaction',
+          status: tx.status || 'complete',
+          timestamp: tx.timestamp || new Date().toISOString(),
+          bolt11: tx.bolt11,
+        }));
+      }
+      
+      // If no transaction method available, return empty array
+      console.warn('WebLN provider does not support transaction history');
       return [];
     } catch (error) {
       console.error('Failed to get transactions:', error);
-      throw new Error(`Transaction retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return [];
     }
   }
 
