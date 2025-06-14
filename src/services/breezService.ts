@@ -1,4 +1,3 @@
-
 import init, {
   connect,
   defaultConfig,
@@ -80,13 +79,12 @@ export class BreezService {
       // Initialize WASM with proper error handling
       await this.ensureWasmInit();
 
-      // Get authentication from environment
+      // Get certificate from environment - only using certificate auth
       const breezCertificate = import.meta.env.VITE_BREEZ_CERTIFICATE || '';
-      const breezApiKey = import.meta.env.VITE_BREEZ_API_KEY || '';
       
-      // Require authentication
-      if (!breezCertificate && !breezApiKey) {
-        throw new Error('BREEZ_AUTH_MISSING: No Breez authentication provided. Please set VITE_BREEZ_CERTIFICATE or VITE_BREEZ_API_KEY in your environment variables.');
+      // Require certificate authentication
+      if (!breezCertificate) {
+        throw new Error('BREEZ_AUTH_MISSING: No Breez certificate provided. Please set VITE_BREEZ_CERTIFICATE in your environment variables.');
       }
 
       // Validate mnemonic before proceeding
@@ -96,12 +94,8 @@ export class BreezService {
 
       const config = await defaultConfig("mainnet");
       
-      // Set authentication
-      if (breezCertificate) {
-        config.breezApiKey = breezCertificate;
-      } else if (breezApiKey) {
-        config.breezApiKey = breezApiKey;
-      }
+      // Set certificate for authentication
+      config.breezApiKey = breezCertificate;
 
       // Convert mnemonic to seed
       const seed = this.mnemonicToSeed(mnemonic);
