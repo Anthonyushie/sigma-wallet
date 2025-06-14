@@ -26,9 +26,6 @@ export interface BreezPayment {
   amountMsat: number;
 }
 
-// Certificate for Breez authentication
-const BREEZ_CERTIFICATE = `MIIBfjCCATCgAwIBAgIHPh1T9W3eozAFBgMrZXAwEDEOMAwGA1UEAxMFQnJlZXowHhcNMjUwNTI3MTgxMTM5WhcNMzUwNTI1MTgxMTM5WjArMRAwDgYDVQQKEwdpUGF5QlRDMRcwFQYDVQQDEw5BbnRob255ICBVc2hpZTAqMAUGAytlcAMhANCD9cvfIDwcoiDKKYdT9BunHLS2/OuKzV8NS0SzqV13o4GNMIGKMA4GA1UdDwEB/wQEAwIFoDAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBTaOaPuXmtLDTJVv++VYBiQr9gHCTAfBgNVHSMEGDAWgBTeqtaSVvON53SSFvxMtiCyayiYazAqBgNVHREEIzAhgR9hbnRob255dHdhbjc1b2ZmaWNpYWxAZ21haWwuY29t`;
-
 export class BreezService {
   private static instance: BreezService;
   private sdk: any = null;
@@ -59,11 +56,26 @@ export class BreezService {
       // Always initialize the WASM first!
       await this.ensureWasmInit();
 
-      console.log('Initializing Breez SDK with proper configuration...');
+      console.log('Initializing Breez SDK...');
       
+      // Get certificate from environment or use empty string as fallback
+      const breezCertificate = import.meta.env.VITE_BREEZ_CERTIFICATE || '';
+      const breezApiKey = import.meta.env.VITE_BREEZ_API_KEY || '';
+      
+      // If no valid certificate is provided, throw a specific error
+      if (!breezCertificate && !breezApiKey) {
+        throw new Error('No Breez authentication provided. Please set VITE_BREEZ_CERTIFICATE or VITE_BREEZ_API_KEY in your environment variables.');
+      }
+
       // Use "mainnet" string as websocket expects string not enum in Breez SDK
       const config = await defaultConfig("mainnet");
-      config.breezApiKey = BREEZ_CERTIFICATE;
+      
+      // Set the authentication method
+      if (breezCertificate) {
+        config.breezApiKey = breezCertificate;
+      } else if (breezApiKey) {
+        config.breezApiKey = breezApiKey;
+      }
 
       // Convert mnemonic to proper seed using BIP39
       const seed = this.mnemonicToSeed(mnemonic);
@@ -77,7 +89,7 @@ export class BreezService {
       this.isInitialized = true;
       console.log('Breez SDK initialized successfully');
       
-      // Perform initial sync (call via SDK instance if possible)
+      // Perform initial sync
       await this.sync();
     } catch (error) {
       console.error('Failed to initialize Breez SDK:', error);
@@ -192,7 +204,6 @@ export class BreezService {
   async disconnect(): Promise<void> {
     if (this.sdk) {
       try {
-        // Breez SDK will handle cleanup automatically
         console.log('Disconnecting from Breez SDK');
       } catch (error) {
         console.error('Error disconnecting:', error);
@@ -208,4 +219,3 @@ export class BreezService {
 }
 
 export const breezService = BreezService.getInstance();
-
