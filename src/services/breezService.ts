@@ -201,12 +201,10 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountMsat, description });
 
-      // Step 1: Prepare the receive payment request with proper payment method config
+      // Step 1: Prepare the receive payment request with correct payment method format
       const prepareRequest = {
-        paymentMethod: {
-          type: "lightning",
-          payerAmountSat: amountSats  // Set the Bitcoin payer amount
-        },
+        paymentMethod: "lightning", // Use string variant instead of object
+        payerAmountSat: amountSats, // Set the Bitcoin payer amount at top level
         amountMsat,
         description: description || 'Lightning payment'
       };
