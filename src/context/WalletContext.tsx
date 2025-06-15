@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { WalletState, Transaction, OnboardingStep, SendFlowState, ReceiveFlowState } from '../types/wallet';
 import { useLightningWallet } from '../hooks/useLightningWallet';
@@ -31,6 +30,7 @@ interface WalletContextType {
   // Receive actions
   generateInvoice: (amount: number, description?: string) => Promise<void>;
   resetReceiveFlow: () => void;
+  markInvoicePaid: (amount: number) => void;
   
   // Lightning actions
   refreshLightningData: () => Promise<void>;
@@ -93,6 +93,8 @@ type Action =
   | { type: 'RESET_SEND_FLOW' }
   | { type: 'SET_SEND_STEP'; payload: SendFlowState['step'] }
   | { type: 'GENERATE_INVOICE'; payload: number; invoice: string }
+  | { type: 'INVOICE_PAID'; payload: { amount: number } }
+  | { type: 'PAYMENT_SENT'; payload: { amount: number } }
   | { type: 'RESET_RECEIVE_FLOW' }
   | { type: 'SET_RECEIVE_STEP'; payload: ReceiveFlowState['step'] }
   | { type: 'UPDATE_BALANCE'; payload: { lightning: number; fiat: number } }
@@ -185,6 +187,36 @@ const walletReducer = (state: State, action: Action): State => {
           invoice: action.invoice,
           qrCode: action.invoice
         }
+      };
+    
+    case 'INVOICE_PAID':
+      return {
+        ...state,
+        wallet: {
+          ...state.wallet,
+          balance: {
+            ...state.wallet.balance,
+            lightning: state.wallet.balance.lightning + action.payload.amount
+          }
+        },
+        receiveFlow: {
+          ...state.receiveFlow,
+          step: 'complete',
+          paidAmount: action.payload.amount
+        }
+      };
+    
+    case 'PAYMENT_SENT':
+      return {
+        ...state,
+        wallet: {
+          ...state.wallet,
+          balance: {
+            ...state.wallet.balance,
+            lightning: state.wallet.balance.lightning - action.payload.amount
+          }
+        },
+        sendFlow: { ...state.sendFlow, step: 'success' }
       };
     
     case 'RESET_RECEIVE_FLOW':
@@ -289,9 +321,9 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   
   const confirmSend = async () => {
     try {
-      if (state.sendFlow.recipient) {
+      if (state.sendFlow.recipient && state.sendFlow.amount) {
         await lightningWallet.payInvoice(state.sendFlow.recipient);
-        dispatch({ type: 'CONFIRM_SEND' });
+        dispatch({ type: 'PAYMENT_SENT', payload: { amount: state.sendFlow.amount } });
       }
     } catch (error) {
       console.error('Failed to send payment:', error);
@@ -323,6 +355,10 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const retryLastOperation = async () => {
     await lightningWallet.retryLastOperation();
+  };
+
+  const markInvoicePaid = (amount: number) => {
+    dispatch({ type: 'INVOICE_PAID', payload: { amount } });
   };
 
   // Update balance from Lightning wallet when it changes
@@ -368,6 +404,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       resetReceiveFlow,
       refreshLightningData,
       retryLastOperation,
+      markInvoicePaid,
     }}>
       {children}
     </WalletContext.Provider>

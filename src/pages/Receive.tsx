@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy } from 'lucide-react';
@@ -10,7 +9,7 @@ import QRCodeDisplay from '../components/QRCodeDisplay';
 
 const Receive: React.FC = () => {
   const navigate = useNavigate();
-  const { receiveFlow, generateInvoice, resetReceiveFlow, isLightningLoading, lightningError } = useWallet();
+  const { receiveFlow, generateInvoice, resetReceiveFlow, isLightningLoading, lightningError, markInvoicePaid } = useWallet();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
 
@@ -38,8 +37,14 @@ const Receive: React.FC = () => {
     if (receiveFlow.invoice) {
       try {
         await navigator.clipboard.writeText(receiveFlow.invoice);
-        // You could add a toast notification here
         console.log('Invoice copied to clipboard');
+        
+        // Simulate payment after 3 seconds (development mode)
+        setTimeout(() => {
+          if (receiveFlow.amount) {
+            markInvoicePaid(receiveFlow.amount);
+          }
+        }, 3000);
       } catch (error) {
         console.error('Failed to copy to clipboard:', error);
       }
@@ -339,11 +344,117 @@ const Receive: React.FC = () => {
     </div>
   );
 
+  const renderSuccessScreen = () => (
+    <div className="space-y-6 relative overflow-hidden">
+      {/* SUCCESS Animation Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-r from-electric-lime via-electric-orange to-electric-blue opacity-30 animate-pulse"></div>
+        <div className="success-animation">
+          <div className="success-image-placeholder">
+            🤑
+          </div>
+        </div>
+        {/* Money rain effect */}
+        <div className="money-rain">
+          <span className="money-emoji">💰</span>
+          <span className="money-emoji">💵</span>
+          <span className="money-emoji">💸</span>
+          <span className="money-emoji">🤑</span>
+          <span className="money-emoji">💎</span>
+        </div>
+      </div>
+
+      {/* Success Content */}
+      <div className="relative z-10">
+        <div className="brutal-card bg-electric-lime text-black text-center border-4 border-black shadow-brutal-lg">
+          <h2 className="text-4xl font-black mb-4 animate-bounce">🎉 PAYMENT RECEIVED!</h2>
+          <p className="font-mono text-xl font-black">
+            YOU'RE ABSOLUTELY STACKED! 🚀
+          </p>
+          <p className="font-mono text-lg mt-2">
+            YOUR BAG JUST GOT HEAVIER 💪
+          </p>
+        </div>
+
+        <div className="brutal-card bg-electric-orange text-black border-4 border-black shadow-brutal">
+          <div className="space-y-2">
+            <p className="font-black uppercase text-sm">SATS ADDED TO YOUR STACK</p>
+            <p className="font-mono text-4xl font-black animate-pulse text-green-600">
+              +{receiveFlow.paidAmount} SATS
+            </p>
+            <p className="font-mono text-sm">
+              ✅ PAYMENT CONFIRMED
+            </p>
+          </div>
+        </div>
+
+        <ActionButton
+          onClick={() => {
+            resetReceiveFlow();
+            navigate('/dashboard');
+          }}
+          variant="success"
+          size="lg"
+          className="w-full font-black text-xl animate-pulse"
+        >
+          BACK TO STACK
+        </ActionButton>
+      </div>
+
+      <style>{`
+        .success-animation {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1;
+          pointer-events: none;
+        }
+        
+        .success-image-placeholder {
+          width: 280px;
+          height: 280px;
+          opacity: 0.15;
+          animation: success-bounce 2s ease-in-out infinite, success-glow 3s ease-in-out infinite alternate;
+          filter: brightness(1.8) contrast(1.3) sepia(0.3) hue-rotate(90deg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 8rem;
+          background: linear-gradient(45deg, #32FF32, #FFD700);
+          border-radius: 50%;
+          border: 8px solid #000;
+        }
+        
+        @keyframes success-bounce {
+          0%, 100% { 
+            transform: translate(-50%, -50%) scale(1);
+          }
+          50% { 
+            transform: translate(-50%, -55%) scale(1.2);
+          }
+        }
+        
+        @keyframes success-glow {
+          0% { 
+            opacity: 0.1; 
+            filter: brightness(1.5) contrast(1) hue-rotate(0deg);
+          }
+          100% { 
+            opacity: 0.25; 
+            filter: brightness(2.5) contrast(1.8) hue-rotate(120deg);
+          }
+        }
+      `}</style>
+    </div>
+  );
+
   return (
     <Layout showBack>
       <div className="max-w-md mx-auto py-8">
         {receiveFlow.step === 'amount' && renderAmountScreen()}
         {receiveFlow.step === 'invoice' && renderInvoiceScreen()}
+        {receiveFlow.step === 'complete' && renderSuccessScreen()}
       </div>
     </Layout>
   );

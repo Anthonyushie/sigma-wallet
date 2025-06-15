@@ -1,4 +1,3 @@
-
 export interface WalletBalance {
   bitcoin: number;
   lightning: number;
@@ -44,4 +43,5 @@ export interface ReceiveFlowState {
   amount?: number;
   invoice?: string;
   qrCode?: string;
+  paidAmount?: number;
 }
