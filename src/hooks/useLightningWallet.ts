@@ -100,20 +100,29 @@ export const useLightningWallet = () => {
 
   const updateBalanceFromBreez = useCallback(async () => {
     try {
-      if (!breezService.isReady()) return;
+      if (!breezService.isReady()) {
+        console.log('Breez SDK not ready for balance update');
+        return;
+      }
 
+      console.log('Fetching wallet info from Breez SDK...');
       const walletState: BreezWalletState = await breezService.getWalletInfo();
+      console.log('Received wallet state from Breez:', walletState);
       
+      // Update the balance state with real values from Breez SDK
       setState(prev => ({
         ...prev,
         balance: {
-          balance: walletState.balance,
+          balance: walletState.balance, // This should be the real balance like 52 sats
           pendingReceive: walletState.pendingReceive,
           pendingSend: walletState.pendingSend,
         },
         lastSyncTime: new Date(),
       }));
+      
+      console.log('Updated Lightning wallet balance to:', walletState.balance);
     } catch (error) {
+      console.error('Failed to update balance from Breez:', error);
       handleError(error);
     }
   }, [handleError]);
@@ -140,6 +149,8 @@ export const useLightningWallet = () => {
             setConnecting(true);
             await breezService.initialize(mnemonic);
             setConnecting(false);
+            
+            // Force balance update after initialization
             await updateBalanceFromBreez();
           } catch (breezError) {
             setConnecting(false);
@@ -228,6 +239,8 @@ export const useLightningWallet = () => {
         setConnecting(true);
         await breezService.initialize(mnemonic);
         setConnecting(false);
+        
+        // Force balance update after restore
         await updateBalanceFromBreez();
       } catch (breezError) {
         setConnecting(false);
@@ -252,10 +265,14 @@ export const useLightningWallet = () => {
       setLoading(true);
       
       if (breezService.isReady()) {
+        console.log('Refreshing wallet data...');
         await breezService.sync();
         await updateBalanceFromBreez();
+      } else {
+        console.log('Breez SDK not ready for refresh');
       }
     } catch (error) {
+      console.error('Failed to refresh wallet data:', error);
       handleError(error);
     } finally {
       setLoading(false);
