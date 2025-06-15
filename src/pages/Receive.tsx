@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { LightningProtocolHandler } from '../utils/protocolHandler';
+import { usePaymentDetection } from '../hooks/usePaymentDetection';
 import Layout from '../components/Layout';
 import ActionButton from '../components/ActionButton';
 import QRCodeDisplay from '../components/QRCodeDisplay';
@@ -10,8 +11,18 @@ import QRCodeDisplay from '../components/QRCodeDisplay';
 const Receive: React.FC = () => {
   const navigate = useNavigate();
   const { receiveFlow, generateInvoice, resetReceiveFlow, isLightningLoading, lightningError, markInvoicePaid } = useWallet();
+  const { detectedPayment, isListening, startListening, resetDetection } = usePaymentDetection();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+
+  // Watch for detected payments
+  useEffect(() => {
+    if (detectedPayment && receiveFlow.step === 'invoice') {
+      console.log('Payment detected, marking as paid:', detectedPayment);
+      markInvoicePaid(detectedPayment.amount);
+      resetDetection();
+    }
+  }, [detectedPayment, receiveFlow.step, markInvoicePaid, resetDetection]);
 
   const handleGenerateInvoice = async () => {
     if (amount) {
@@ -33,18 +44,19 @@ const Receive: React.FC = () => {
     }
   };
 
+  // Start payment detection when invoice is generated
+  useEffect(() => {
+    if (receiveFlow.step === 'invoice' && receiveFlow.invoice && receiveFlow.amount && !isListening) {
+      console.log('Starting payment detection for amount:', receiveFlow.amount);
+      startListening(receiveFlow.amount, receiveFlow.invoice);
+    }
+  }, [receiveFlow.step, receiveFlow.invoice, receiveFlow.amount, isListening, startListening]);
+
   const handleCopyInvoice = async () => {
     if (receiveFlow.invoice) {
       try {
         await navigator.clipboard.writeText(receiveFlow.invoice);
         console.log('Invoice copied to clipboard');
-        
-        // Simulate payment after 3 seconds (development mode)
-        setTimeout(() => {
-          if (receiveFlow.amount) {
-            markInvoicePaid(receiveFlow.amount);
-          }
-        }, 3000);
       } catch (error) {
         console.error('Failed to copy to clipboard:', error);
       }
@@ -68,6 +80,7 @@ const Receive: React.FC = () => {
       navigate('/dashboard');
     } else {
       resetReceiveFlow();
+      resetDetection();
     }
   };
 
@@ -167,7 +180,7 @@ const Receive: React.FC = () => {
         <div className="brutal-card bg-electric-orange text-black border-4 border-black shadow-brutal-lg">
           <h2 className="text-3xl font-black mb-4 animate-bounce">⚡ YOU'RE HIM FOR REAL ⚡</h2>
           <p className="font-mono text-xl font-black">
-            GET PAID, LEGEND 😎
+            WAITING FOR PAYMENT... 💎
           </p>
           <p className="font-mono text-lg mt-2">
             Amount: {receiveFlow.amount} SATS 🚀
@@ -175,6 +188,11 @@ const Receive: React.FC = () => {
           {description && (
             <p className="font-mono text-sm mt-1 text-gray-800">
               "{description}"
+            </p>
+          )}
+          {isListening && (
+            <p className="font-mono text-sm mt-2 text-blue-600 animate-pulse">
+              🔍 Listening for payment...
             </p>
           )}
         </div>
@@ -226,6 +244,7 @@ const Receive: React.FC = () => {
         <ActionButton
           onClick={() => {
             resetReceiveFlow();
+            resetDetection();
             navigate('/dashboard');
           }}
           variant="secondary"
@@ -391,6 +410,7 @@ const Receive: React.FC = () => {
         <ActionButton
           onClick={() => {
             resetReceiveFlow();
+            resetDetection();
             navigate('/dashboard');
           }}
           variant="success"
