@@ -1,6 +1,9 @@
+
 import init, {
   connect,
-  defaultConfig
+  defaultConfig,
+  prepareReceivePayment,
+  receivePayment
 } from '@breeztech/breez-sdk-liquid/web';
 import * as bip39 from 'bip39';
 import { BreezWalletState, BreezInvoice, BreezPayment } from './types';
@@ -173,11 +176,19 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountSats, amountMsat, description });
 
-      // Try the simplest approach first - just call receivePayment directly
-      console.log('Calling SDK receivePayment directly');
-      const invoiceResponse = await this.sdk.receivePayment();
+      // Use the correct Breez SDK API - prepare first, then receive
+      const prepareRequest = {
+        amountMsat,
+        description: description || 'Lightning payment'
+      };
 
-      console.log('SDK receivePayment final response:', invoiceResponse);
+      console.log('Calling prepareReceivePayment with:', prepareRequest);
+      const prepareResponse = await prepareReceivePayment(prepareRequest);
+      console.log('prepareReceivePayment response:', prepareResponse);
+
+      console.log('Calling receivePayment with prepare response');
+      const invoiceResponse = await receivePayment(prepareResponse);
+      console.log('receivePayment final response:', invoiceResponse);
 
       // Extract the invoice data
       const invoice = invoiceResponse;
