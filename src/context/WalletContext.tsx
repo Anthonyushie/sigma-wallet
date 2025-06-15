@@ -323,6 +323,10 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     try {
       if (state.sendFlow.recipient && state.sendFlow.amount) {
         await lightningWallet.payInvoice(state.sendFlow.recipient);
+        
+        // Force refresh the wallet data to get updated balance
+        await lightningWallet.refreshWalletData();
+        
         dispatch({ type: 'PAYMENT_SENT', payload: { amount: state.sendFlow.amount } });
       }
     } catch (error) {
@@ -358,14 +362,16 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const markInvoicePaid = (amount: number) => {
+    // Force refresh the wallet data to sync with real balance
+    lightningWallet.refreshWalletData();
     dispatch({ type: 'INVOICE_PAID', payload: { amount } });
   };
 
-  // Update balance from Lightning wallet when it changes
+  // Update balance from Lightning wallet when it changes - use real balance only
   useEffect(() => {
     if (lightningWallet.balance) {
       const lightningBalanceSats = lightningWallet.balance.balance;
-      const fiatValue = lightningBalanceSats * 0.05; // Approximate conversion rate
+      const fiatValue = lightningBalanceSats * 0.00005; // More realistic conversion rate
       
       dispatch({ 
         type: 'UPDATE_BALANCE', 

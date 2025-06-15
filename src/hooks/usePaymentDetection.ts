@@ -26,6 +26,8 @@ export const usePaymentDetection = () => {
       error: null,
     }));
 
+    let previousBalance: number | null = null;
+
     // Poll for payment status every 2 seconds
     const pollInterval = setInterval(async () => {
       try {
@@ -41,15 +43,21 @@ export const usePaymentDetection = () => {
         const walletInfo = await breezService.getWalletInfo();
         console.log('Checking for payment, current balance:', walletInfo.balance);
 
-        // For now, we'll use a simple approach - if pendingReceive changes to 0 
-        // and we were expecting a payment, assume it was received
-        if (walletInfo.pendingReceive === 0 && state.isListening) {
-          console.log('Payment detected!');
+        // Initialize previous balance on first check
+        if (previousBalance === null) {
+          previousBalance = walletInfo.balance;
+          return;
+        }
+
+        // Check if balance increased by the expected amount (or more)
+        const balanceIncrease = walletInfo.balance - previousBalance;
+        if (balanceIncrease >= expectedAmount) {
+          console.log('Payment detected! Balance increased by:', balanceIncrease);
           setState(prev => ({
             ...prev,
             isListening: false,
             detectedPayment: {
-              amount: expectedAmount,
+              amount: balanceIncrease, // Use actual increase, not expected
               paymentHash,
             },
           }));
@@ -78,7 +86,7 @@ export const usePaymentDetection = () => {
       clearInterval(pollInterval);
       clearTimeout(timeout);
     };
-  }, [state.isListening]);
+  }, []);
 
   const stopListening = useCallback(() => {
     setState(prev => ({
