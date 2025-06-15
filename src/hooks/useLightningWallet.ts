@@ -3,6 +3,7 @@ import { BitcoinWalletService, WalletKeys } from '../services/bitcoinWallet';
 import { WebLNBalance, WebLNTransaction, WebLNInvoice, WebLNPayment } from '../services/weblnService';
 import { BreezErrorHandler, BreezError } from '../utils/errorHandling';
 import { breezService, BreezWalletState, BreezInvoice, BreezPayment } from '../services/breez';
+import { useToast } from '@/hooks/use-toast';
 
 export interface LightningWalletState {
   isInitialized: boolean;
@@ -17,6 +18,8 @@ export interface LightningWalletState {
 }
 
 export const useLightningWallet = () => {
+  const { toast } = useToast();
+  
   const [state, setState] = useState<LightningWalletState>({
     isInitialized: false,
     walletKeys: null,
@@ -349,23 +352,39 @@ export const useLightningWallet = () => {
           await updateBalanceFromBreez();
           return payment;
         } catch (breezError) {
-          console.log('Breez payment failed, using mock:', breezError);
-          // Don't throw here, fall through to mock
+          console.log('Breez payment failed:', breezError);
+          
+          // Check for insufficient funds error specifically
+          if (breezError instanceof Error && breezError.message.includes('not enough funds')) {
+            toast({
+              title: "Insufficient Funds",
+              description: "You don't have enough sats to make this payment. Add more funds to your wallet.",
+              variant: "destructive",
+            });
+            throw new Error('INSUFFICIENT_FUNDS: Not enough balance to complete payment');
+          }
+          
+          // For other Breez errors, don't show mock payment
+          console.error('Payment failed:', breezError);
+          throw breezError;
         }
       }
 
-      // Fallback to mock payment
-      console.log('Creating mock payment for development/testing');
-      const mockAmount = 1000; // Default mock amount
-      const mockPayment = generateMockPayment(bolt11, mockAmount);
-      return mockPayment;
+      // If Breez SDK is not ready, show an error instead of mock payment
+      toast({
+        title: "Payment Failed",
+        description: "Lightning network not available. Please try again later.",
+        variant: "destructive",
+      });
+      throw new Error('LIGHTNING_UNAVAILABLE: Lightning network not connected');
     } catch (error) {
+      console.error('Payment error:', error);
       handleError(error);
       throw error;
     } finally {
       setLoading(false);
     }
-  }, [handleError, setLoading, updateBalanceFromBreez, generateMockPayment, state.isInitialized]);
+  }, [handleError, setLoading, updateBalanceFromBreez, generateMockPayment, state.isInitialized, toast]);
 
   const deleteWallet = useCallback(async () => {
     try {

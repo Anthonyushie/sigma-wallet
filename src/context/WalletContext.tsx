@@ -333,6 +333,9 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
     } catch (error) {
       console.error('Failed to send payment:', error);
+      
+      // Don't dispatch success state on payment failure
+      // The error will be handled by the Lightning wallet hook and show appropriate toast
       throw error;
     }
   };
