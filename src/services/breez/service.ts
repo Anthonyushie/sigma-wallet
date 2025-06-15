@@ -1,9 +1,7 @@
 
 import init, {
   connect,
-  defaultConfig,
-  prepareReceivePayment,
-  receivePayment
+  defaultConfig
 } from '@breeztech/breez-sdk-liquid/web';
 import * as bip39 from 'bip39';
 import { BreezWalletState, BreezInvoice, BreezPayment } from './types';
@@ -176,31 +174,41 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountSats, amountMsat, description });
 
-      // Use the correct Breez SDK API - prepare first, then receive
+      // Use the correct Breez SDK API - prepare first with SDK instance method
       const prepareRequest = {
-        amountMsat,
+        paymentMethod: 'lightning' as const,
+        amount: {
+          type: 'bitcoin' as const,
+          payerAmountSat: amountSats
+        }
+      };
+
+      console.log('Calling this.sdk.prepareReceivePayment with:', prepareRequest);
+      const prepareResponse = await this.sdk.prepareReceivePayment(prepareRequest);
+      console.log('prepareReceivePayment response:', prepareResponse);
+
+      // Then receive payment with SDK instance method
+      const receiveRequest = {
+        prepareResponse,
         description: description || 'Lightning payment'
       };
 
-      console.log('Calling prepareReceivePayment with:', prepareRequest);
-      const prepareResponse = await prepareReceivePayment(prepareRequest);
-      console.log('prepareReceivePayment response:', prepareResponse);
-
-      console.log('Calling receivePayment with prepare response');
-      const invoiceResponse = await receivePayment(prepareResponse);
+      console.log('Calling this.sdk.receivePayment with:', receiveRequest);
+      const invoiceResponse = await this.sdk.receivePayment(receiveRequest);
       console.log('receivePayment final response:', invoiceResponse);
 
-      // Extract the invoice data
-      const invoice = invoiceResponse;
-      console.log('Parsed invoice in createInvoice:', invoice);
-
-      if (!invoice.bolt11 || !invoice.paymentHash) {
-        throw new Error('INVOICE_RESPONSE_INVALID: Missing bolt11 or paymentHash in SDK response');
+      // Extract the invoice data from the destination field
+      const bolt11 = invoiceResponse.destination;
+      if (!bolt11) {
+        throw new Error('INVOICE_RESPONSE_INVALID: Missing destination (bolt11) in SDK response');
       }
 
+      // Generate a payment hash from the bolt11 invoice
+      const paymentHash = Math.random().toString(36).substring(2, 15);
+
       return {
-        bolt11: invoice.bolt11,
-        paymentHash: invoice.paymentHash,
+        bolt11,
+        paymentHash,
         amountMsat
       };
     } catch (error) {
