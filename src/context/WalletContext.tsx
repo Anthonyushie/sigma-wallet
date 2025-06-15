@@ -297,7 +297,9 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   
   const restoreWallet = async (seedPhrase: string[]) => {
     try {
-      await lightningWallet.restoreWallet(seedPhrase.join(' '));
+      // Convert array to string for Lightning wallet restoration
+      const mnemonicString = seedPhrase.join(' ');
+      await lightningWallet.restoreWallet(mnemonicString);
       dispatch({ type: 'RESTORE_WALLET', payload: seedPhrase });
     } catch (error) {
       console.error('Failed to restore wallet:', error);
