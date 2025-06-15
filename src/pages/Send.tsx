@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Zap } from 'lucide-react';
@@ -78,37 +79,36 @@ const Send: React.FC = () => {
   const renderInputScreen = () => (
     <div className="space-y-6">
       <div className="brutal-card">
-        <h2 className="text-2xl font-black mb-6">SEND SATS 🚀</h2>
+        <h2 className="text-xl sm:text-2xl font-black mb-6">SEND SATS 🚀</h2>
         
         <div className="space-y-4">
           <div>
             <label className="block font-black uppercase text-sm mb-2">
               INVOICE
             </label>
-            <input
-              type="text"
+            <textarea
               value={invoice}
               onChange={(e) => setInvoice(e.target.value)}
               placeholder="Paste Lightning Invoice Here"
-              className="brutal-input w-full"
+              className="brutal-input w-full min-h-[120px] resize-none text-sm"
               disabled={isLightningLoading}
             />
           </div>
           
           {lightningError && (
             <div className="brutal-card bg-red-500 text-white">
-              <p className="font-mono text-sm">{lightningError}</p>
+              <p className="font-mono text-xs sm:text-sm break-words">{lightningError}</p>
             </div>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <ActionButton
           onClick={handleBack}
           variant="secondary"
           size="lg"
-          className="w-full"
+          className="w-full order-2 sm:order-1"
           disabled={isLightningLoading}
         >
           NEVERMIND
@@ -118,7 +118,7 @@ const Send: React.FC = () => {
           onClick={handleInvoiceSubmit}
           variant="success"
           size="lg"
-          className="w-full"
+          className="w-full order-1 sm:order-2"
           disabled={!invoice || isLightningLoading}
         >
           {isLightningLoading ? "COOKING..." : "INITIATE SEND"}
@@ -130,27 +130,34 @@ const Send: React.FC = () => {
   const renderConfirmScreen = () => (
     <div className="space-y-6">
       <div className="brutal-card">
-        <h2 className="text-2xl font-black mb-6">CONFIRM SEND 🚀</h2>
+        <h2 className="text-xl sm:text-2xl font-black mb-6">CONFIRM SEND 🚀</h2>
         
         <div className="space-y-4">
-          <p className="font-mono text-lg">
-            Recipient: {sendFlow.recipient}
-          </p>
-          <p className="font-mono text-lg">
-            Amount: {sendFlow.amount} SATS
-          </p>
-          <p className="font-mono text-sm text-gray-600">
-            Your balance: {lightningBalance} sats
-          </p>
+          <div>
+            <p className="font-mono text-sm text-gray-600 mb-2">Recipient:</p>
+            <p className="font-mono text-sm break-all bg-gray-100 p-2 rounded border">
+              {sendFlow.recipient}
+            </p>
+          </div>
+          <div>
+            <p className="font-mono text-lg">
+              Amount: <span className="font-black">{sendFlow.amount} SATS</span>
+            </p>
+          </div>
+          <div>
+            <p className="font-mono text-sm text-gray-600">
+              Your balance: {lightningBalance} sats
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <ActionButton
           onClick={handleBack}
           variant="secondary"
           size="lg"
-          className="w-full"
+          className="w-full order-2 sm:order-1"
           disabled={isLightningLoading}
         >
           NEVERMIND
@@ -160,7 +167,7 @@ const Send: React.FC = () => {
           onClick={handleConfirmSend}
           variant="success"
           size="lg"
-          className="w-full"
+          className="w-full order-1 sm:order-2"
           disabled={isProcessing || isLightningLoading}
         >
           {isProcessing ? "SENDING..." : "CONFIRM SEND"}
@@ -172,15 +179,19 @@ const Send: React.FC = () => {
   const renderSuccessScreen = () => (
     <div className="space-y-6">
       <div className="brutal-card">
-        <h2 className="text-2xl font-black mb-6">PAYMENT SENT! 🎉</h2>
+        <h2 className="text-xl sm:text-2xl font-black mb-6 text-center">PAYMENT SENT! 🎉</h2>
         
         <div className="space-y-4">
-          <p className="font-mono text-lg">
-            Sent {sendFlow.amount} SATS to:
-          </p>
-          <p className="font-mono text-sm break-all">
-            {sendFlow.recipient}
-          </p>
+          <div>
+            <p className="font-mono text-lg text-center">
+              Sent <span className="font-black">{sendFlow.amount} SATS</span> to:
+            </p>
+          </div>
+          <div>
+            <p className="font-mono text-xs break-all bg-gray-100 p-3 rounded border">
+              {sendFlow.recipient}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -200,7 +211,7 @@ const Send: React.FC = () => {
 
   return (
     <Layout showBack>
-      <div className="max-w-md mx-auto py-8">
+      <div className="max-w-md mx-auto py-4 px-4 sm:py-8">
         {sendFlow.step === 'input' && renderInputScreen()}
         {sendFlow.step === 'confirm' && renderConfirmScreen()}
         {sendFlow.step === 'success' && renderSuccessScreen()}
