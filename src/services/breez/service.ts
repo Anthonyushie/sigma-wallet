@@ -1,4 +1,3 @@
-
 import init, {
   connect,
   defaultConfig
@@ -238,17 +237,28 @@ export class BreezService {
 
       console.log('Paying invoice:', bolt11);
 
-      // First prepare the payment
-      const prepareRequest = { bolt11 };
-      console.log('Calling SDK sendPayment with:', prepareRequest);
+      // First prepare the payment - use prepareSendPayment with destination
+      const prepareRequest = {
+        destination: bolt11
+      };
+      console.log('Calling SDK prepareSendPayment with:', prepareRequest);
       
-      const payment = await this.sdk.sendPayment(prepareRequest);
+      const prepareResponse = await this.sdk.prepareSendPayment(prepareRequest);
+      console.log('SDK prepareSendPayment response:', prepareResponse);
+
+      // Then send the payment with the prepare response
+      const sendRequest = {
+        prepareResponse
+      };
+      console.log('Calling SDK sendPayment with:', sendRequest);
+      
+      const payment = await this.sdk.sendPayment(sendRequest);
       console.log('SDK sendPayment response:', payment);
 
       return {
-        paymentHash: payment.paymentHash,
+        paymentHash: payment.txId || payment.destination || Math.random().toString(36).substring(2, 15),
         status: payment.status,
-        amountMsat: payment.amountMsat
+        amountMsat: payment.amountSat * 1000
       };
     } catch (error) {
       console.error('Failed to pay invoice:', error);
