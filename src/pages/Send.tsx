@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Zap } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { isValidLightningInvoice } from '../services/breez/utils';
+import { decodeInvoice } from '../utils/invoiceDecoder';
 import Layout from '../components/Layout';
 import ActionButton from '../components/ActionButton';
 import QRCodeDisplay from '../components/QRCodeDisplay';
@@ -26,10 +27,29 @@ const Send: React.FC = () => {
         return;
       }
       
-      // For demo purposes, we'll use a fixed amount
-      // In a real app, you'd decode the invoice to get the amount
-      const mockAmount = 1000; // 1000 sats
-      initiateSend(invoice.trim(), mockAmount);
+      try {
+        // Decode the invoice to get the actual amount
+        const invoiceDetails = decodeInvoice(invoice.trim());
+        const amount = invoiceDetails.amount;
+        
+        if (amount <= 0) {
+          toast({
+            title: "Invalid Amount",
+            description: "Invoice amount must be greater than 0 sats.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        initiateSend(invoice.trim(), amount);
+      } catch (error) {
+        console.error('Failed to decode invoice:', error);
+        toast({
+          title: "Invalid Invoice",
+          description: "Could not decode the Lightning invoice. Please check the format.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
