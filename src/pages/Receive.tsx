@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy } from 'lucide-react';
@@ -19,6 +20,12 @@ const Receive: React.FC = () => {
         const amountSats = parseInt(amount);
         if (amountSats <= 0) {
           throw new Error('Amount must be greater than 0');
+        }
+        if (amountSats < 100) {
+          throw new Error('Amount must be at least 100 sats');
+        }
+        if (amountSats > 25000000) {
+          throw new Error('Amount must be less than 25,000,000 sats');
         }
         await generateInvoice(amountSats, description || undefined);
       } catch (error) {
@@ -76,10 +83,11 @@ const Receive: React.FC = () => {
               placeholder="How many SATS you wanna catch?"
               className="brutal-input w-full text-2xl"
               disabled={isLightningLoading}
-              min="1"
+              min="100"
+              max="25000000"
             />
             <p className="text-sm text-gray-600 mt-1 font-mono">
-              Minimum: 1 sat
+              Minimum: 100 sats • Maximum: 25,000,000 sats
             </p>
           </div>
 
@@ -122,7 +130,7 @@ const Receive: React.FC = () => {
           variant="success"
           size="lg"
           className="w-full"
-          disabled={!amount || parseInt(amount) <= 0 || isLightningLoading}
+          disabled={!amount || parseInt(amount) < 100 || parseInt(amount) > 25000000 || isLightningLoading}
         >
           {isLightningLoading ? "COOKING..." : "PULL UP INVOICE"}
         </ActionButton>
