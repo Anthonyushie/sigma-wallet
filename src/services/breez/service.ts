@@ -173,24 +173,8 @@ export class BreezService {
 
       console.log('Creating invoice with params:', { amountSats, amountMsat, description });
 
-      // Use correct tagged union structure
-      const prepareRequest = {
-        paymentMethod: {
-          lightning: {
-            amountMsat,
-            description: description || 'Lightning payment'
-          }
-        }
-      };
-
-      console.log('Calling SDK prepareReceivePayment with:', prepareRequest);
-
-      // Use prepareReceivePayment with fixed request shape
-      await this.sdk.prepareReceivePayment(prepareRequest);
-      console.log('SDK prepareReceivePayment responded OK');
-
-      // IMPORTANT: receivePayment expects NO arguments!
-      console.log('Calling SDK receivePayment with NO arguments');
+      // Try the simplest approach first - just call receivePayment directly
+      console.log('Calling SDK receivePayment directly');
       const invoiceResponse = await this.sdk.receivePayment();
 
       console.log('SDK receivePayment final response:', invoiceResponse);
