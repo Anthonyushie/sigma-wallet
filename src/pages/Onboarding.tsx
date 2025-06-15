@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../context/WalletContext';
+import { BitcoinWalletService } from '../services/bitcoinWallet';
 import Layout from '../components/Layout';
 import ActionButton from '../components/ActionButton';
 
@@ -10,16 +10,41 @@ const Onboarding: React.FC = () => {
   const { onboarding, generateWallet, restoreWallet, confirmBackup } = useWallet();
   const [restoreInput, setRestoreInput] = useState('');
   const [backupConfirmed, setBackupConfirmed] = useState(false);
+  const [restoreError, setRestoreError] = useState('');
 
   const handleGenerateWallet = () => {
     generateWallet();
   };
 
-  const handleRestoreWallet = () => {
-    if (restoreInput.trim()) {
-      const seedPhrase = restoreInput.trim().split(' ');
-      restoreWallet(seedPhrase);
+  const handleRestoreWallet = async () => {
+    if (!restoreInput.trim()) return;
+    
+    setRestoreError('');
+    
+    try {
+      // Clean and validate the input
+      const cleanedInput = restoreInput.trim().toLowerCase();
+      const words = cleanedInput.split(/\s+/); // Split by any whitespace
+      
+      // Validate word count
+      if (words.length !== 12) {
+        setRestoreError('Seed phrase must be exactly 12 words');
+        return;
+      }
+      
+      // Validate the mnemonic before attempting restore
+      const mnemonicString = words.join(' ');
+      if (!BitcoinWalletService.validateMnemonic(mnemonicString)) {
+        setRestoreError('Invalid seed phrase. Please check your words and try again.');
+        return;
+      }
+      
+      // If validation passes, restore the wallet
+      await restoreWallet(words);
       navigate('/dashboard');
+    } catch (error) {
+      console.error('Restore wallet error:', error);
+      setRestoreError('Failed to restore wallet. Please check your seed phrase and try again.');
     }
   };
 
@@ -52,21 +77,29 @@ const Onboarding: React.FC = () => {
           size="lg"
           className="w-full"
         >
-          LET’S GET THIS BREAD
+          LET'S GET THIS BREAD
         </ActionButton>
       </div>
 
       <div className="brutal-card text-center">
         <h2 className="text-2xl font-black mb-4">RESTORE OG STACK</h2>
         <p className="mb-4 font-mono">
-          Got your 12 words? Paste ‘em below and flex your recovery skills
+          Got your 12 words? Paste 'em below and flex your recovery skills
         </p>
         <textarea
           value={restoreInput}
-          onChange={(e) => setRestoreInput(e.target.value)}
-          placeholder="12-word seed phrase... Don’t leak it"
+          onChange={(e) => {
+            setRestoreInput(e.target.value);
+            setRestoreError(''); // Clear error when user types
+          }}
+          placeholder="12-word seed phrase... Don't leak it"
           className="brutal-input w-full h-24 resize-none mb-4"
         />
+        {restoreError && (
+          <div className="text-red-500 text-sm mb-4 font-mono">
+            {restoreError}
+          </div>
+        )}
         <ActionButton 
           onClick={handleRestoreWallet}
           variant="secondary"
@@ -83,9 +116,9 @@ const Onboarding: React.FC = () => {
   const renderBackupReminder = () => (
     <div className="space-y-6">
       <div className="brutal-card bg-electric-orange text-black">
-        <h2 className="text-2xl font-black mb-4">🚨 DON’T FUMBLE THE BAG</h2>
+        <h2 className="text-2xl font-black mb-4">🚨 DON'T FUMBLE THE BAG</h2>
         <p className="font-mono mb-4">
-          These 12 words? Protect with your life. Lose ‘em = R.I.P. your stack.
+          These 12 words? Protect with your life. Lose 'em = R.I.P. your stack.
         </p>
       </div>
 
@@ -109,7 +142,7 @@ const Onboarding: React.FC = () => {
               className="w-6 h-6 border-4 border-black"
             />
             <span className="font-mono">
-              Got ‘em written somewhere safe, fr fr
+              Got 'em written somewhere safe, fr fr
             </span>
           </label>
           
